@@ -2,7 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
+const auth = require('../middleware/auth');
 
-router.get('/', dashboardController.getDashboardData);
+// הוסף את middleware האימות לכל הנתיבים
+router.use(auth);
+
+// נתיב לקבלת נתוני דשבורד
+router.get('/getDashboardData/:userId', dashboardController.getDashboardData);
 
 module.exports = router;
