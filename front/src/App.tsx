@@ -10,20 +10,21 @@ import ExpenseHistoryPage from './pages/ExpenseHistoryPage';
 import UserManagementPage from './pages/UserManagementPage';
 
 const App: React.FC = () => {
-    return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/add-expense" element={<AddExpensePage />} />
-                <Route path="/request" element={<RequestPage />} />
-                <Route path="/fixed-expenses" element={<FixedExpensesPage />} />
-                <Route path="/expense-history" element={<ExpenseHistoryPage />} />
-                <Route path="/user-management" element={<UserManagementPage />} />
-            </Routes>
-        </Router>
-    );
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/add-expense" element={<AddExpensePage />} />
+        <Route path="/request" element={<RequestPage />} />
+        <Route path="/fixed-expenses" element={<FixedExpensesPage />} />
+        <Route path="/expense-history" element={<ExpenseHistoryPage />} />
+        <Route path="/user-management" element={<UserManagementPage />} />
+      </Routes>
+    </Router>
+  );
 };
 
 export default App;

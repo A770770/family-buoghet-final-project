@@ -5,7 +5,7 @@ import axios from 'axios';
 const LoginPage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        username: '',
+        email: '',
         password: ''
     });
     const [error, setError] = useState('');
@@ -16,7 +16,7 @@ const LoginPage = () => {
         setLoading(true);
         setError('');
 
-        if (!formData.username || !formData.password) {
+        if (!formData.email || !formData.password) {
             setError('נא למלא את כל השדות');
             setLoading(false);
             return;
@@ -47,8 +47,8 @@ const LoginPage = () => {
                     <label>דוא"ל</label>
                     <input
                         type="email"
-                        value={formData.username}
-                        onChange={(e) => setFormData({...formData, username: e.target.value})}
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
                         placeholder="הכנס דוא״ל"
                     />
                 </div>
