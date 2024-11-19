@@ -70,13 +70,12 @@ const DashboardPage: React.FC = () => {
     },
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem('token');
       const userId = localStorage.getItem('userId');
-      console.log({ token, userId });
 
       if (!token || !userId) {
         navigate('/login');
@@ -85,7 +84,7 @@ const DashboardPage: React.FC = () => {
 
       try {
         setLoading(true);
-        setError(null);
+        setError('');
 
         const dashboardResponse = await axios.get(
           `http://localhost:5004/api/dashboard/getDashboardData/${userId}`,
@@ -100,9 +99,6 @@ const DashboardPage: React.FC = () => {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('שגיאה בטעינת הנתונים. אנא נסה שוב.');
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          navigate('/login');
-        }
       } finally {
         setLoading(false);
       }
@@ -147,26 +143,21 @@ const DashboardPage: React.FC = () => {
         <div className="user-welcome">
           <h1>שלום, {userData.username}</h1>
           <div className="user-actions">
-            <button onClick={() => navigate(-1)} className="back-button">
-              חזרה
+            <button onClick={() => navigate('/expenses/history')} className="nav-button">
+              היסטוריית הוצאות
             </button>
+            <button onClick={() => navigate('/expenses/add')} className="nav-button">
+              הוספת הוצאה
+            </button>
+            {userData.role === 'parent' && (
+              <button onClick={() => navigate('/requests')} className="nav-button">
+                בקשות ממתינות
+              </button>
+            )}
             <button onClick={handleLogout} className="logout-button">
               התנתק
             </button>
           </div>
-        </div>
-        <div className="header-actions">
-          <button onClick={handleAddExpense} className="add-expense-button">
-            הוספת הוצאה +
-          </button>
-          {userData.role === 'parent' && (
-            <button
-              onClick={() => navigate('/requests')}
-              className="requests-button"
-            >
-              בקשות ממתינות
-            </button>
-          )}
         </div>
       </header>
 
@@ -183,7 +174,12 @@ const DashboardPage: React.FC = () => {
       <main className="dashboard-content">
         <section className="summary-cards">
           <div className="card total-budget">
-            <h3>יתרה בקופה</h3>
+            <div className="budget-header">
+              <h3>יתרה בקופה</h3>
+              <button onClick={() => navigate('/income/add')} className="add-income-button">
+                הוספת הכנסה חודשית +
+              </button>
+            </div>
             <div className="amount">
               {formatNumber(dashboardData.totalBudget)}
             </div>

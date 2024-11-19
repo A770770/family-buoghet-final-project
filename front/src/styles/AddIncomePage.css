@@ -1,4 +1,4 @@
-.add-expense-container {
+.add-income-container {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;
@@ -46,14 +46,26 @@ textarea {
 .submit-button {
     width: 100%;
     padding: 12px;
-    background-color: #4a90e2;
+    background-color: #4CAF50;  /* שינוי צבע לירוק עבור הכנסות */
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
+    transition: background-color 0.3s;
 }
 
 .submit-button:hover {
-    background-color: #357abd;
+    background-color: #45a049;  /* ירוק כהה יותר בhover */
 }
+
+/* סגנונות נוספים ספציפיים להכנסות */
+.income-source-group select {
+    background-color: white;
+}
+
+.income-amount-input {
+    font-size: 24px;
+    text-align: center;
+    font-weight: bold;
+} 

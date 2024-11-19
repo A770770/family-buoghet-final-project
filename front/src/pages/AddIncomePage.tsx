@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import '../styles/AddExpensePage.css';
+import '../styles/AddIncomePage.css';
 
-const AddExpensePage: React.FC = () => {
+const AddIncomePage: React.FC = () => {
     const navigate = useNavigate();
-    const [title, setTitle] = useState('');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('מזון');
+    const [source, setSource] = useState('משכורת');
     const [description, setDescription] = useState('');
 
     const handleSubmit = async (event: React.FormEvent) => {
@@ -21,46 +20,44 @@ const AddExpensePage: React.FC = () => {
                 return;
             }
 
-            await axios.post('http://localhost:5004/api/expenses', {
-                title,
+            const response = await axios.post('http://localhost:5004/api/income', {
                 amount: parseFloat(amount),
-                category,
+                source,
                 description,
-                date: new Date().toISOString(),
-                isRecurring: false,
                 userId
             }, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
             });
-            
-            navigate('/dashboard');
+
+            if (response.status === 201) {
+                // רענון הדשבורד
+                await axios.get(`http://localhost:5004/api/dashboard/refreshDashboard/${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                navigate('/dashboard');
+            }
         } catch (error) {
-            console.error('Error adding expense:', error);
+            console.error('Error adding income:', error);
+            // הוספת הודעת שגיאה למשתמש
+            alert('שגיאה בהוספת ההכנסה. אנא נסה שוב.');
         }
     };
 
     return (
-        <div className="add-expense-container">
+        <div className="add-income-container">
             <header>
                 <button className="back-button" onClick={() => navigate('/dashboard')}>
                     חזרה לדף הבית
                 </button>
-                <h1>הוספת הוצאה</h1>
+                <h1>הוספת הכנסה</h1>
             </header>
             
             <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="title">כותרת:</label>
-                    <input
-                        type="text"
-                        id="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                    />
-                </div>
                 <div className="form-group">
                     <label htmlFor="amount">סכום:</label>
                     <input
@@ -72,17 +69,15 @@ const AddExpensePage: React.FC = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="category">קטגוריה:</label>
+                    <label htmlFor="source">מקור:</label>
                     <select
-                        id="category"
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
+                        id="source"
+                        value={source}
+                        onChange={(e) => setSource(e.target.value)}
                     >
-                        <option value="מזון">מזון</option>
-                        <option value="תחבורה">תחבורה</option>
-                        <option value="בילויים">בילויים</option>
-                        <option value="ביגוד">ביגוד</option>
-                        <option value="חשבונות">חשבונות</option>
+                        <option value="משכורת">משכורת</option>
+                        <option value="מתנה">מתנה</option>
+                        <option value="השקעות">השקעות</option>
                         <option value="אחר">אחר</option>
                     </select>
                 </div>
@@ -94,10 +89,10 @@ const AddExpensePage: React.FC = () => {
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
-                <button type="submit" className="submit-button">שמור הוצאה</button>
+                <button type="submit" className="submit-button">הוסף הכנסה</button>
             </form>
         </div>
     );
 };
 
-export default AddExpensePage;
+export default AddIncomePage; 
