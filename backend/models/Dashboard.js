@@ -1,4 +1,3 @@
-// models/Expense.js
 const mongoose = require('mongoose');
 
 const dashboardSchema = new mongoose.Schema({
@@ -21,27 +20,14 @@ const dashboardSchema = new mongoose.Schema({
     }],
     alerts: [{
         message: String,
-        type: String,
-        createdAt: {
-            type: Date,
-            default: Date.now
-        }
+        type: String
     }],
     monthlyStats: {
-        totalExpenses: Number,
-        totalIncome: Number,
-        expensesByCategory: [{
-            category: String,
-            amount: Number
-        }],
-        dailyExpenses: [{
-            date: Date,
-            amount: Number
-        }]
+        type: Object,
+        default: {}
     }
 }, {
     timestamps: true
 });
 
-const Dashboard = mongoose.model('Dashboard', dashboardSchema);
-module.exports = Dashboard;
+module.exports = mongoose.model('Dashboard', dashboardSchema);

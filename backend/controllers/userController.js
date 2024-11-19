@@ -112,44 +112,30 @@ exports.signup = async (req, res) => {
 // התחברות
 exports.login = async (req, res) => {
     try {
-        const { username, password } = req.body;
-
-        if (!username || !password) {
-            return res.status(400).json({ message: 'נדרשים שם משתמש וסיסמה' });
-        }
-
-        const user = await User.findOne({
-            $or: [
-                { email: username.toLowerCase() },
-                { username: username.toLowerCase() }
-            ]
-        }).select('+password');
-
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        
         if (!user) {
-            return res.status(401).json({ message: 'פרטי התחברות שגויים' });
+            return res.status(400).json({ message: 'פרטי התחברות שגויים' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            return res.status(401).json({ message: 'פרטי התחברות שגויים' });
+            return res.status(400).json({ message: 'פרטי התחברות שגויים' });
         }
 
         const token = generateToken(user);
-
+        
         res.json({
-            message: 'התחברת בהצלחה',
             token,
             user: {
                 id: user._id,
                 username: user.username,
-                email: user.email,
                 role: user.role
             }
         });
-
     } catch (error) {
-        console.error('שגיאה בתהליך ההתחברות:', error);
-        res.status(500).json({ message: 'שגיאה בתהליך ההתחברות' });
+        res.status(500).json({ message: 'שגיאת שרת' });
     }
 };
 

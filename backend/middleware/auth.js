@@ -1,6 +1,6 @@
 // backend/middleware/auth.js
 const jwt = require('jsonwebtoken');
-const config = require('../db/config');
+const config = require('../config/config');
 
 module.exports = function(req, res, next) {
     // קבלת הטוקן מה-header
