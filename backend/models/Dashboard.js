@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const dashboardSchema = new mongoose.Schema({
+const DashboardSchema = new Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
@@ -11,23 +12,35 @@ const dashboardSchema = new mongoose.Schema({
         default: 0
     },
     recentExpenses: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Expense'
+        title: String,
+        amount: Number,
+        category: String,
+        date: Date
     }],
     upcomingExpenses: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Expense'
+        title: String,
+        amount: Number,
+        dueDate: Date
     }],
     alerts: [{
         message: String,
-        type: String
+        type: {
+            type: String,
+            enum: ['warning', 'error', 'info']
+        }
     }],
     monthlyStats: {
-        type: Object,
-        default: {}
+        totalExpenses: Number,
+        totalIncome: Number,
+        expensesByCategory: [{
+            category: String,
+            amount: Number
+        }],
+        dailyExpenses: [{
+            date: String,
+            amount: Number
+        }]
     }
-}, {
-    timestamps: true
 });
 
-module.exports = mongoose.model('Dashboard', dashboardSchema);
+module.exports = mongoose.model('Dashboard', DashboardSchema);
