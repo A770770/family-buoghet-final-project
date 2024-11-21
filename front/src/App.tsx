@@ -1,33 +1,27 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';import LoginPage from './pages/LoginPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import SignupPage from './pages/SignupPage';
-import AddExpensePage from './pages/AddExpensePage';
 import RequestPage from './pages/RequestPage';
-import FixedExpensesPage from './pages/FixedExpensesPage';
-import ExpenseHistoryPage from './pages/ExpenseHistoryPage';
-import UserManagementPage from './pages/UserManagementPage';
+import AddExpensePage from './pages/AddExpensePage';
 import AddIncomePage from './pages/AddIncomePage';
+import PrivateRoute from './components/PrivateRoute';
 
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/expenses/add" element={<AddExpensePage />} />
-        <Route path="/request" element={<RequestPage />} />
-        <Route path="/expenses/fixed" element={<FixedExpensesPage />} />
-        <Route path="/expense-history" element={<ExpenseHistoryPage />} />
-        <Route path="/user-management" element={<UserManagementPage />} />
-        <Route path="/expenses/history" element={<ExpenseHistoryPage />} />
-        <Route path="/expenses/fixed" element={<FixedExpensesPage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/income/add" element={<AddIncomePage />} />
-
-
+        <Route path="/register" element={<RegisterPage />} />
+        
+        <Route element={<PrivateRoute />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/requests" element={<RequestPage />} />
+          <Route path="/expenses/add" element={<AddExpensePage />} />
+          <Route path="/income/add" element={<AddIncomePage />} />
+        </Route>
       </Routes>
     </Router>
   );

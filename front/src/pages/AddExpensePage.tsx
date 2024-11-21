@@ -5,96 +5,88 @@ import '../styles/AddExpensePage.css';
 
 const AddExpensePage: React.FC = () => {
     const navigate = useNavigate();
-    const [title, setTitle] = useState('');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('מזון');
+    const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
+    const [error, setError] = useState('');
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
             const token = localStorage.getItem('token');
             const userId = localStorage.getItem('userId');
 
-            if (!token || !userId) {
-                navigate('/login');
-                return;
-            }
-
             await axios.post('http://localhost:5004/api/expenses', {
-                title,
                 amount: parseFloat(amount),
                 category,
                 description,
-                date: new Date().toISOString(),
-                isRecurring: false,
                 userId
             }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
-            
+
+            // רענון הדשבורד
+            await axios.get(
+                `http://localhost:5004/api/dashboard/refreshDashboard/${userId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
             navigate('/dashboard');
-        } catch (error) {
-            console.error('Error adding expense:', error);
+        } catch (error: any) {
+            setError(error.response?.data?.error || 'שגיאה בהוספת ההוצאה');
         }
     };
 
     return (
         <div className="add-expense-container">
-            <header>
-                <button className="back-button" onClick={() => navigate('/dashboard')}>
-                    חזרה לדף הבית
-                </button>
-                <h1>הוספת הוצאה</h1>
-            </header>
+            <h2>הוספת הוצאה חדשה</h2>
+            {error && <div className="error-message">{error}</div>}
             
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label htmlFor="title">כותרת:</label>
-                    <input
-                        type="text"
-                        id="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="amount">סכום:</label>
+                    <label>סכום:</label>
                     <input
                         type="number"
-                        id="amount"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         required
                     />
                 </div>
+
                 <div className="form-group">
-                    <label htmlFor="category">קטגוריה:</label>
+                    <label>קטגוריה:</label>
                     <select
-                        id="category"
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
+                        required
                     >
+                        <option value="">בחר קטגוריה</option>
                         <option value="מזון">מזון</option>
                         <option value="תחבורה">תחבורה</option>
                         <option value="בילויים">בילויים</option>
+                        <option value="קניות">קניות</option>
+                        <option value="חינוך">חינוך</option>
+                        <option value="בריאות">בריאות</option>
                         <option value="ביגוד">ביגוד</option>
-                        <option value="חשבונות">חשבונות</option>
                         <option value="אחר">אחר</option>
                     </select>
                 </div>
+
                 <div className="form-group">
-                    <label htmlFor="description">תיאור:</label>
+                    <label>תיאור:</label>
                     <textarea
-                        id="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        required
                     />
                 </div>
-                <button type="submit" className="submit-button">שמור הוצאה</button>
+
+                <div className="buttons-container">
+                    <button type="submit">הוסף הוצאה</button>
+                    <button type="button" onClick={() => navigate('/dashboard')}>
+                        ביטול
+                    </button>
+                </div>
             </form>
         </div>
     );

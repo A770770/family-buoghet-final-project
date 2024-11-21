@@ -99,6 +99,61 @@ const getUpcomingExpenses = async (userId) => {
     .select('title amount dueDate');
 };
 
+// נוסיף פונקציית עזר פנימית
+const refreshDashboardInternal = async (userId) => {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error('משתמש לא נמצא');
+    }
+
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const budget = await Budget.findOne({ userId });
+    const expenses = await Expense.find({
+        userId,
+        date: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
+    });
+
+    const pendingRequests = user.role === 'parent' 
+        ? await Request.find({ parentId: userId, status: 'pending' })
+            .populate('childId', 'username')
+            .select('amount description category requestDate')
+        : await Request.find({ childId: userId, status: 'pending' })
+            .select('amount description category requestDate status');
+
+    const alerts = await checkAlerts(budget, expenses);
+    
+    if (pendingRequests.length > 0) {
+        alerts.push({
+            message: `יש ${pendingRequests.length} בקשות ממתינות`,
+            type: 'info'
+        });
+    }
+
+    const dashboardData = {
+        userId,
+        totalBudget: budget?.amount || 0,
+        recentExpenses: await getRecentExpenses(userId),
+        upcomingExpenses: await getUpcomingExpenses(userId),
+        pendingRequests: {
+            count: pendingRequests.length,
+            items: pendingRequests
+        },
+        alerts,
+        monthlyStats: await calculateMonthlyStats(userId, firstDayOfMonth, lastDayOfMonth)
+    };
+
+    await Dashboard.findOneAndUpdate(
+        { userId }, 
+        dashboardData,
+        { upsert: true, new: true }
+    );
+
+    return dashboardData;
+};
+
 // קבלת נתוני דשבורד
 exports.getDashboardData = async (req, res) => {
     try {
@@ -214,4 +269,26 @@ exports.updateDashboardPreferences = async (req, res) => {
     }
 };
 
-module.exports = exports;
+// נעדכן את הפונקציה המקורית
+exports.refreshDashboard = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const dashboardData = await refreshDashboardInternal(userId);
+        res.json(dashboardData);
+    } catch (error) {
+        console.error('שגיאה ברענון הדשבורד:', error);
+        res.status(500).json({ message: 'שגיאה בשרת' });
+    }
+};
+
+// נייצא את הפונקציה הפנימית לשימוש בקונטרולרים אחרים
+exports.refreshDashboardInternal = refreshDashboardInternal;
+
+module.exports = {
+    getDashboardData: exports.getDashboardData,
+    getMonthlyStats: exports.getMonthlyStats,
+    getAlerts: exports.getAlerts,
+    updateDashboardPreferences: exports.updateDashboardPreferences,
+    refreshDashboard: exports.refreshDashboard,
+    refreshDashboardInternal: exports.refreshDashboardInternal
+};

@@ -47,6 +47,7 @@ interface DashboardData {
       amount: number;
     }>;
   };
+  pendingRequests: number;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -68,6 +69,7 @@ const DashboardPage: React.FC = () => {
       expensesByCategory: [],
       dailyExpenses: [],
     },
+    pendingRequests: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -124,6 +126,10 @@ const DashboardPage: React.FC = () => {
     navigate('/login');
   };
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
   if (loading) {
     return <div className="loading">טוען...</div>;
   }
@@ -150,8 +156,19 @@ const DashboardPage: React.FC = () => {
               הוספת הוצאה
             </button>
             {userData.role === 'parent' && (
-              <button onClick={() => navigate('/requests')} className="nav-button">
+              <button 
+                onClick={() => handleNavigate('/pending-requests')}
+                className="nav-button"
+              >
                 בקשות ממתינות
+              </button>
+            )}
+            {userData.role === 'child' && (
+              <button 
+                onClick={() => handleNavigate('/request')}
+                className="nav-button"
+              >
+                בקשת כסף חדשה
               </button>
             )}
             <button onClick={handleLogout} className="logout-button">
@@ -260,6 +277,21 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
         </section>
+
+        <div className="dashboard-section pending-requests">
+          <h2>בקשות ממתינות</h2>
+          {dashboardData.pendingRequests > 0 ? (
+            <div className="pending-requests-summary">
+              <span className="count">{dashboardData.pendingRequests}</span>
+              <span className="text">בקשות ממתינות לאישור</span>
+              <button onClick={() => navigate('/requests')} className="view-all-btn">
+                צפה בכל הבקשות
+              </button>
+            </div>
+          ) : (
+            <p className="no-requests">אין בקשות ממתינות</p>
+          )}
+        </div>
       </main>
     </div>
   );

@@ -2,47 +2,46 @@
 const Request = require('../models/Request');
 const User = require('../models/User');
 const Alert = require('../models/Alert');
+const Budget = require('../models/Budget');
+const Expense = require('../models/Expense');
+const { refreshDashboardInternal } = require('./dashboardController');
 
 exports.createRequest = async (req, res) => {
     try {
         const { amount, description, category } = req.body;
         const childId = req.user.userId;
-
-        // מציאת ההורה של הילד
+        
+        // מציאת ההורה המקושר
         const child = await User.findById(childId);
         if (!child || !child.parentId) {
-            return res.status(400).json({ error: 'לא נמצא הורה משויך' });
+            return res.status(400).json({ error: 'לא נמצא הורה מקושר' });
         }
 
-        const newRequest = new Request({
+        const request = new Request({
             childId,
             parentId: child.parentId,
             amount,
             description,
             category,
-            status: 'pending',
-            date: new Date()
+            requestDate: new Date(),
+            status: 'pending'
         });
 
-        await newRequest.save();
+        await request.save();
 
         // יצירת התראה להורה
         await Alert.create({
             userId: child.parentId,
-            type: 'request_pending',
-            message: `בקשה חדשה מ-${child.username} על סך ${amount} ש"ח`,
+            type: 'new_request',
+            message: `התקבלה בקשה חדשה מ-${child.username}`,
             relatedData: {
-                requestId: newRequest._id,
-                childId,
-                amount
+                requestId: request._id,
+                amount,
+                description
             }
         });
 
-        res.status(201).json({
-            message: 'הבקשה נשלחה בהצלחה',
-            request: newRequest
-        });
-
+        res.status(201).json(request);
     } catch (error) {
         res.status(500).json({ error: 'שגיאה ביצירת הבקשה' });
     }
@@ -89,10 +88,10 @@ exports.getRequests = async (req, res) => {
 exports.respondToRequest = async (req, res) => {
     try {
         const { requestId } = req.params;
-        const { status, comment } = req.body;
+        const { status, transferMethod, transferDetails } = req.body;
         const parentId = req.user.userId;
 
-        const request = await Request.findById(requestId);
+        const request = await Request.findById(requestId).populate('childId');
         if (!request) {
             return res.status(404).json({ error: 'הבקשה לא נמצאה' });
         }
@@ -105,22 +104,52 @@ exports.respondToRequest = async (req, res) => {
             return res.status(400).json({ error: 'לא ניתן לשנות בקשה שכבר טופלה' });
         }
 
+        if (status === 'approved') {
+            const budget = await Budget.findOne({ userId: parentId });
+            if (!budget) {
+                return res.status(400).json({ error: 'לא נמצא תקציב' });
+            }
+
+            if (budget.amount < request.amount) {
+                return res.status(400).json({ error: 'אין מספיק כסף בתקציב' });
+            }
+
+            budget.amount -= request.amount;
+            await budget.save();
+
+            // יצירת הוצאה חדשה
+            await Expense.create({
+                userId: parentId,
+                amount: request.amount,
+                category: 'העברה לילד',
+                description: `העברה ל${request.childId.username}: ${request.description}`,
+                date: new Date()
+            });
+
+            request.transferMethod = transferMethod;
+            request.transferDetails = transferDetails;
+        }
+
         request.status = status;
-        request.parentComment = comment;
         request.responseDate = new Date();
         await request.save();
 
         // יצירת התראה לילד
         await Alert.create({
-            userId: request.childId,
+            userId: request.childId._id,
             type: 'request_response',
             message: `הבקשה שלך ${status === 'approved' ? 'אושרה' : 'נדחתה'}`,
             relatedData: {
                 requestId: request._id,
                 status,
-                comment
+                transferMethod,
+                transferDetails
             }
         });
+
+        // רענון הדשבורד של שני הצדדים
+        await refreshDashboardInternal(parentId);
+        await refreshDashboardInternal(request.childId._id);
 
         res.json({
             message: 'התגובה נשמרה בהצלחה',
@@ -128,6 +157,7 @@ exports.respondToRequest = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('שגיאה בטיפול בבקשה:', error);
         res.status(500).json({ error: 'שגיאה בטיפול בבקשה' });
     }
 };
