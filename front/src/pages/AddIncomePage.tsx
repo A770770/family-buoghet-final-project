@@ -33,13 +33,28 @@ const AddIncomePage: React.FC = () => {
             });
 
             if (response.status === 201) {
-                // רענון הדשבורד
-                await axios.get(`http://localhost:5004/api/dashboard/refreshDashboard/${userId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-                navigate('/dashboard');
+                try {
+                    // רענון הדשבורד
+                    await axios.get(`http://localhost:5004/api/dashboard/refreshDashboard/${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    });
+                    
+                    // המתנה קצרה לפני הניווט
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    navigate('/dashboard', { 
+                        state: { 
+                            refresh: true,
+                            newIncome: response.data.income,
+                            budgetStatus: response.data.budgetStatus
+                        } 
+                    });
+                } catch (refreshError) {
+                    console.error('Error refreshing dashboard:', refreshError);
+                    navigate('/dashboard');
+                }
             }
         } catch (error) {
             console.error('Error adding income:', error);
