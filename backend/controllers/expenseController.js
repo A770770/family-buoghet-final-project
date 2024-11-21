@@ -1,63 +1,62 @@
 const Expense = require('../models/Expense');
 const Budget = require('../models/Budget');
+const { refreshDashboardInternal } = require('./dashboardController');
 
 // הוספת הוצאה חדשה
 exports.addExpense = async (req, res) => {
     try {
-        const { 
-            amount, 
-            category,
-            date, 
-            description, 
-            isRecurring,
-            recurringDetails,
-            userId 
-        } = req.body;
+        const { amount, category, description } = req.body;
+        const userId = req.user.userId;
 
-        // בדיקת תקציב לפני הוספת ההוצאה
-        const currentBudget = await Budget.getCurrentBudget(userId);
-        if (currentBudget) {
-            const categoryBudget = currentBudget.categories.find(cat => cat.name === category);
-            if (categoryBudget && (categoryBudget.used + amount) > categoryBudget.limit) {
-                return res.status(400).json({ 
-                    message: 'חריגה מהתקציב בקטגוריה זו',
-                    currentUsage: categoryBudget.used,
-                    limit: categoryBudget.limit,
-                    newExpenseAmount: amount
-                });
-            }
+        // בדיקת תקציב בקופה הראשית
+        const currentBudget = await Budget.findOne({ userId });
+
+        if (!currentBudget) {
+            return res.status(400).json({ error: 'לא נמצא תקציב בקופה הראשית' });
+        }
+
+        // בדיקה אם יש מספיק כסף בתקציב
+        if (currentBudget.amount < amount) {
+            return res.status(400).json({ error: 'אין מספיק כסף בקופה הראשית' });
         }
 
         // יצירת ההוצאה
-        const newExpense = new Expense({
+        const expense = new Expense({
+            userId,
             amount,
             category,
-            date: date || new Date(),
             description,
-            isRecurring,
-            recurringDetails,
-            userId
+            date: new Date()
         });
 
-        await newExpense.save();
+        await expense.save();
 
-        // עדכון התקציב
-        if (currentBudget) {
-            await currentBudget.updateCategoryUsage(category, amount);
+        // עדכון הקופה הראשית
+        currentBudget.amount -= amount;
+        
+        // עדכון שימוש בקטגוריה
+        if (!currentBudget.categoryUsage) {
+            currentBudget.categoryUsage = {};
         }
+        currentBudget.categoryUsage[category] = (currentBudget.categoryUsage[category] || 0) + amount;
+        
+        await currentBudget.save();
 
-        res.status(201).json({ 
-            message: 'ההוצאה נשמרה בהצלחה', 
-            expense: newExpense,
-            budgetStatus: currentBudget ? {
-                categoryUsed: currentBudget.categories.find(cat => cat.name === category)?.used,
-                totalRemaining: currentBudget.remainingAmount
-            } : null
+        // רענון הדשבורד
+        await refreshDashboardInternal(userId);
+
+        res.status(201).json({
+            message: 'ההוצאה נוספה בהצלחה',
+            expense,
+            remainingBudget: currentBudget.amount
         });
 
     } catch (error) {
-        console.error('Error saving expense:', error);
-        res.status(500).json({ message: 'שגיאה בשמירת ההוצאה', error: error.message });
+        console.error('שגיאה בהוספת הוצאה:', error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ error: 'נתונים לא תקינים. אנא בדוק את כל השדות.' });
+        }
+        res.status(500).json({ error: 'שגיאה בהוספת ההוצאה' });
     }
 };
 
