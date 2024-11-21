@@ -9,6 +9,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
 const connectDB = require('./db/index');
+const incomeRoutes = require('./routes/income');
+const expenseRoutes = require('./routes/expenseRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -37,7 +39,8 @@ app.use(cors({
 // נתיבים
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/income', require('./routes/income'));
+app.use('/api/income', incomeRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 // התחברות למסד הנתונים
 connectDB();
