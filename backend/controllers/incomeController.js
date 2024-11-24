@@ -1,75 +1,47 @@
 const Income = require('../models/Income');
-const Budget = require('../models/Budget');
+const Expense = require('../models/Expense');
+const mongoose = require('mongoose');
 
 exports.addIncome = async (req, res) => {
     try {
-        const { amount, source, description, userId } = req.body;
-        console.log('מוסיף הכנסה:', { amount, source, description, userId });
+        const { amount, source, description } = req.body;
+        const userId = req.user.id;
 
-        // בדיקת תקציב קיים
-        let currentBudget = await Budget.findOne({ userId });
-        console.log('תקציב נוכחי:', currentBudget);
+        // המרה ל-ObjectId
+        const userObjectId = new mongoose.Types.ObjectId(userId);
 
         // יצירת הכנסה חדשה
         const newIncome = new Income({
             amount: Number(amount),
             source,
             description,
-            userId,
+            userId: userObjectId,
             date: new Date()
         });
 
-        // שמירת ההכנסה
-        const savedIncome = await newIncome.save();
-        console.log('הכנסה נשמרה:', savedIncome);
+        await newIncome.save();
 
-        // עדכון או יצירת תקציב
-        if (currentBudget) {
-            // עדכון תקציב קיים
-            const updateResult = await Budget.findOneAndUpdate(
-                { userId },
-                { 
-                    $inc: { 
-                        amount: Number(amount),
-                        remainingAmount: Number(amount)
-                    }
-                },
-                { new: true }
-            );
-            console.log('תקציב עודכן:', updateResult);
-            currentBudget = updateResult;
-        } else {
-            // יצירת תקציב חדש
-            const today = new Date();
-            const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            const newBudget = new Budget({
-                userId,
-                amount: Number(amount),
-                remainingAmount: Number(amount),
-                categories: [],
-                startDate: today,
-                endDate: endOfMonth
-            });
-            
-            currentBudget = await newBudget.save();
-            console.log('תקציב חדש נוצר:', currentBudget);
-        }
+        // חישוב היתרה הכוללת
+        const totalIncome = await Income.aggregate([
+            { $match: { userId: userObjectId } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+
+        const totalExpenses = await Expense.aggregate([
+            { $match: { userId: userObjectId } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+
+        const currentBalance = (totalIncome[0]?.total || 0) - (totalExpenses[0]?.total || 0);
 
         res.status(201).json({
             message: 'ההכנסה נוספה בהצלחה',
-            income: savedIncome,
-            budgetStatus: {
-                totalAmount: currentBudget.amount,
-                remainingAmount: currentBudget.remainingAmount
-            }
+            income: newIncome,
+            currentBalance
         });
 
     } catch (error) {
         console.error('Error adding income:', error);
-        res.status(500).json({ 
-            message: 'שגיאה בהוספת הכנסה',
-            error: error.message
-        });
+        res.status(500).json({ message: 'שגיאה בהוספת הכנסה' });
     }
 }; 

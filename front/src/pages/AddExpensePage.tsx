@@ -12,28 +12,53 @@ const AddExpensePage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!amount || !category || !description) {
+            setError('נא למלא את כל השדות');
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
 
-            await axios.post('http://localhost:5004/api/expenses', {
-                amount: parseFloat(amount),
-                category,
-                description,
-                userId
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const numericAmount = parseFloat(amount);
+            if (isNaN(numericAmount) || numericAmount <= 0) {
+                setError('נא להזין סכום חיובי');
+                return;
+            }
+
+            await axios.post('http://localhost:5004/api/expenses', 
+                {
+                    amount: numericAmount,
+                    category,
+                    description
+                },
+                {
+                    headers: { 
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
 
             // רענון הדשבורד
-            await axios.get(
-                `http://localhost:5004/api/dashboard/refreshDashboard/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                await axios.get(
+                    `http://localhost:5004/api/dashboard/refreshDashboard/${userId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+            }
 
             navigate('/dashboard');
         } catch (error: any) {
-            setError(error.response?.data?.error || 'שגיאה בהוספת ההוצאה');
+            const errorMessage = error.response?.data?.error || 'שגיאה בהוספת ההוצאה';
+            setError(errorMessage);
+            console.error('Error:', error.response?.data);
         }
     };
 

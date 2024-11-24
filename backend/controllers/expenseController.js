@@ -1,29 +1,42 @@
 const Expense = require('../models/Expense');
 const Budget = require('../models/Budget');
 const { refreshDashboardInternal } = require('./dashboardController');
+const Income = require('../models/Income');
+const mongoose = require('mongoose');
 
 // הוספת הוצאה חדשה
 exports.addExpense = async (req, res) => {
     try {
         const { amount, category, description } = req.body;
-        const userId = req.user.userId;
+        const userId = req.user.id;
+        const userObjectId = new mongoose.Types.ObjectId(userId);
 
-        // בדיקת תקציב בקופה הראשית
-        const currentBudget = await Budget.findOne({ userId });
+        // בישוב היתרה הזמינה
+        const totalIncome = await Income.aggregate([
+            { $match: { userId: userObjectId } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
 
-        if (!currentBudget) {
-            return res.status(400).json({ error: 'לא נמצא תקציב בקופה הראשית' });
-        }
+        const totalExpenses = await Expense.aggregate([
+            { $match: { userId: userObjectId } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
 
-        // בדיקה אם יש מספיק כסף בתקציב
-        if (currentBudget.amount < amount) {
-            return res.status(400).json({ error: 'אין מספיק כסף בקופה הראשית' });
+        const availableBalance = (totalIncome[0]?.total || 0) - (totalExpenses[0]?.total || 0);
+
+        // בדיקה אם יש מספיק כסף
+        if (availableBalance < amount) {
+            return res.status(400).json({ 
+                error: 'אין מספיק כסף בקופה',
+                availableBalance,
+                requestedAmount: amount
+            });
         }
 
         // יצירת ההוצאה
         const expense = new Expense({
-            userId,
-            amount,
+            userId: userObjectId,
+            amount: Number(amount),
             category,
             description,
             date: new Date()
@@ -31,35 +44,26 @@ exports.addExpense = async (req, res) => {
 
         await expense.save();
 
-        // עדכון הקופה הראשית
-        currentBudget.amount -= amount;
-        
-        // עדכון שימוש בקטגוריה
-        if (!currentBudget.categoryUsage) {
-            currentBudget.categoryUsage = {};
-        }
-        currentBudget.categoryUsage[category] = (currentBudget.categoryUsage[category] || 0) + amount;
-        
-        await currentBudget.save();
+        // חישוב היתרה המעודכנת
+        const updatedTotalExpenses = await Expense.aggregate([
+            { $match: { userId: userObjectId } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
 
-        // רענון הדשבורד
-        await refreshDashboardInternal(userId);
+        const currentBalance = (totalIncome[0]?.total || 0) - (updatedTotalExpenses[0]?.total || 0);
 
         res.status(201).json({
             message: 'ההוצאה נוספה בהצלחה',
             expense,
-            remainingBudget: currentBudget.amount
+            currentBalance,
+            availableBalance: currentBalance // מחזיר את היתרה המעודכנת
         });
 
     } catch (error) {
         console.error('שגיאה בהוספת הוצאה:', error);
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({ error: 'נתונים לא תקינים. אנא בדוק את כל השדות.' });
-        }
         res.status(500).json({ error: 'שגיאה בהוספת ההוצאה' });
     }
 };
-
 // קבלת כל ההוצאות של משתמש
 exports.getExpenses = async (req, res) => {
     try {
@@ -214,5 +218,6 @@ exports.getExpenseHistory = async (req, res) => {
         res.status(500).json({ message: 'שגיאה בקבלת היסטוריית ההוצאות', error: error.message });
     }
 };
-
 module.exports = exports;
+
+
