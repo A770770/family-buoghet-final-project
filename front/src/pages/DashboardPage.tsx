@@ -15,40 +15,9 @@ import {
 } from 'recharts';
 import '../styles/DashboardPage.css';
 import { log } from 'console';
-
-interface DashboardData {
-  totalBudget: number;
-  recentExpenses: Array<{
-    id: string;
-    title: string;
-    amount: number;
-    category: string;
-    date: string;
-  }>;
-  upcomingExpenses: Array<{
-    id: string;
-    title: string;
-    amount: number;
-    dueDate: string;
-  }>;
-  alerts: Array<{
-    message: string;
-    type: 'warning' | 'error' | 'info';
-  }>;
-  monthlyStats: {
-    totalExpenses: number;
-    totalIncome: number;
-    expensesByCategory: Array<{
-      category: string;
-      amount: number;
-    }>;
-    dailyExpenses: Array<{
-      date: string;
-      amount: number;
-    }>;
-  };
-  pendingRequests: number;
-}
+import { RecentExpenses } from '../components/RecentExpenses';
+import { UpcomingExpenses } from '../components/UpcomingExpenses';
+import { DashboardData, ExpenseCategory } from '../types/dashboard';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -59,17 +28,16 @@ const DashboardPage: React.FC = () => {
     role: localStorage.getItem('userRole'),
   });
   const [dashboardData, setDashboardData] = useState<DashboardData>({
-    totalBudget: 0,
+    currentBalance: 0,
+    totalExpenses: 0,
+    expensesByCategory: [],
     recentExpenses: [],
     upcomingExpenses: [],
     alerts: [],
-    monthlyStats: {
-      totalExpenses: 0,
-      totalIncome: 0,
-      expensesByCategory: [],
-      dailyExpenses: [],
-    },
-    pendingRequests: 0,
+    pendingRequests: {
+      count: 0,
+      items: []
+    }
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -198,19 +166,19 @@ const DashboardPage: React.FC = () => {
               </button>
             </div>
             <div className="amount">
-              {formatNumber(dashboardData.totalBudget)}
+              {formatNumber(dashboardData.currentBalance)}
             </div>
             <div className="stats">
-              <div className="income">
-                <span>הכנסות החודש</span>
+              <div className="balance">
+                <span>יתרה בקופה</span>
                 <span>
-                  {formatNumber(dashboardData.monthlyStats.totalIncome)}
+                  {formatNumber(dashboardData.currentBalance)}
                 </span>
               </div>
               <div className="expenses">
                 <span>הוצאות החודש</span>
                 <span>
-                  {formatNumber(dashboardData.monthlyStats.totalExpenses)}
+                  {formatNumber(dashboardData.totalExpenses)}
                 </span>
               </div>
             </div>
@@ -218,30 +186,12 @@ const DashboardPage: React.FC = () => {
         </section>
 
         <section className="charts-grid">
-          <div className="card expenses-chart">
-            <h3>הוצאות לאורך החודש</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dashboardData.monthlyStats.dailyExpenses}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="#8884d8"
-                  name="סכום"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
           <div className="card category-chart">
             <h3>התפלגות הוצאות לפי קטגוריה</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={dashboardData.monthlyStats.expensesByCategory}
+                  data={dashboardData.expensesByCategory}
                   dataKey="amount"
                   nameKey="category"
                   cx="50%"
@@ -249,9 +199,9 @@ const DashboardPage: React.FC = () => {
                   outerRadius={100}
                   label
                 >
-                  {dashboardData.monthlyStats.expensesByCategory.map(
-                    (_, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  {dashboardData.expensesByCategory.map(
+                    (entry: ExpenseCategory, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     )
                   )}
                 </Pie>
@@ -264,25 +214,26 @@ const DashboardPage: React.FC = () => {
         <section className="recent-expenses">
           <h3>הוצאות אחרונות</h3>
           <div className="expenses-list">
-            {dashboardData.recentExpenses.map((expense) => (
-              <div key={expense.id} className="expense-item">
-                <div className="expense-details">
-                  <span className="expense-title">{expense.title}</span>
-                  <span className="expense-category">{expense.category}</span>
-                </div>
-                <span className="expense-amount">
-                  {formatNumber(expense.amount)}
-                </span>
-              </div>
-            ))}
+            {dashboardData.recentExpenses?.length > 0 && (
+              <RecentExpenses expenses={dashboardData.recentExpenses} />
+            )}
+          </div>
+        </section>
+
+        <section className="upcoming-expenses">
+          <h3>הוצאות עתידיות</h3>
+          <div className="expenses-list">
+            {dashboardData.upcomingExpenses?.length > 0 && (
+              <UpcomingExpenses expenses={dashboardData.upcomingExpenses} />
+            )}
           </div>
         </section>
 
         <div className="dashboard-section pending-requests">
           <h2>בקשות ממתינות</h2>
-          {dashboardData.pendingRequests > 0 ? (
+          {dashboardData.pendingRequests.count > 0 ? (
             <div className="pending-requests-summary">
-              <span className="count">{dashboardData.pendingRequests}</span>
+              <span className="count">{dashboardData.pendingRequests.count}</span>
               <span className="text">בקשות ממתינות לאישור</span>
               <button onClick={() => navigate('/requests')} className="view-all-btn">
                 צפה בכל הבקשות
