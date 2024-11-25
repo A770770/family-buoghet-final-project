@@ -40,20 +40,10 @@ exports.checkEmail = async (req, res) => {
 
 // הרשמה
 exports.signup = async (req, res) => {
-    console.log('=== Starting Signup Process ===');
-    console.log('Request Body:', req.body);
-    
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            console.log('Validation Errors:', errors.array());
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const { username, email, password, role } = req.body;
-        console.log('Parsed User Data:', { username, email, role });
-
-        // בדיקה אם המשתמש קיים
+        const { username, email, password, role, parentEmail } = req.body;
+        
+        // בדיקת משתמש קיים
         const existingUser = await User.findOne({
             $or: [
                 { email: email.toLowerCase() },
@@ -62,11 +52,6 @@ exports.signup = async (req, res) => {
         });
 
         if (existingUser) {
-            console.log('User already exists:', {
-                existingEmail: existingUser.email,
-                existingUsername: existingUser.username
-            });
-            
             return res.status(400).json({ 
                 message: existingUser.email === email.toLowerCase() 
                     ? 'כתובת האימייל כבר קיימת במערכת' 
@@ -74,34 +59,40 @@ exports.signup = async (req, res) => {
             });
         }
 
-        console.log('Creating new user...');
+        // אם זה ילד, בדוק שההורה קיים
+        if (role === 'child' && parentEmail) {
+            const parent = await User.findOne({ 
+                email: parentEmail.toLowerCase(),
+                role: 'parent'
+            });
+            
+            if (!parent) {
+                return res.status(400).json({ 
+                    message: 'לא נמצא הורה עם כתובת האימייל שהוזנה'
+                });
+            }
+        }
+
         const user = new User({
             username: username.toLowerCase(),
             email: email.toLowerCase(),
             password,
-            role
+            role,
+            parentEmail: role === 'child' ? parentEmail.toLowerCase() : undefined
         });
 
         await user.save();
-        console.log('User saved successfully:', { id: user._id, username: user.username });
-
         const token = generateToken(user);
-        console.log('Token generated successfully');
 
         res.status(201).json({
-            message: 'משתמש נרשם בהצלחה',
             token,
             user: {
                 id: user._id,
                 username: user.username,
-                email: user.email,
                 role: user.role
             }
         });
-        console.log('=== Signup Process Completed Successfully ===');
     } catch (error) {
-        console.error('Signup Error:', error);
-        console.error('Error Stack:', error.stack);
         res.status(500).json({ 
             message: 'שגיאה בתהליך ההרשמה',
             error: error.message 
@@ -218,7 +209,7 @@ exports.linkAccounts = async (req, res) => {
         await parent.save();
 
         res.json({
-            message: 'החשבונות קושרו בהצלחה',
+            message: 'החשבונות קושרו בהצלח��',
             parentId: parent._id
         });
     } catch (error) {
