@@ -18,6 +18,8 @@ import { log } from 'console';
 import { RecentExpenses } from '../components/RecentExpenses';
 import { UpcomingExpenses } from '../components/UpcomingExpenses';
 import { DashboardData, ExpenseCategory } from '../types/dashboard';
+import { FaCog } from 'react-icons/fa';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -114,9 +116,13 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
+        <HamburgerMenu userRole={userData.role} />
         <div className="user-welcome">
           <h1>שלום, {userData.username}</h1>
           <div className="user-actions">
+            <button onClick={() => navigate('/expenses/fixed')} className="nav-button">
+              <FaCog /> ניהול הוצאות קבועות
+            </button>
             <button onClick={() => navigate('/expenses/history')} className="nav-button">
               היסטוריית הוצאות
             </button>

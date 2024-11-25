@@ -7,6 +7,8 @@ import RequestPage from './pages/RequestPage';
 import AddExpensePage from './pages/AddExpensePage';
 import AddIncomePage from './pages/AddIncomePage';
 import PrivateRoute from './components/PrivateRoute';
+import SignupPage from './pages/SignupPage';
+import FixedExpensesPage from './pages/FixedExpensesPage';
 
 const App: React.FC = () => {
   return (
@@ -14,6 +16,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<DashboardPage />} />
@@ -21,6 +24,7 @@ const App: React.FC = () => {
           <Route path="/requests" element={<RequestPage />} />
           <Route path="/expenses/add" element={<AddExpensePage />} />
           <Route path="/income/add" element={<AddIncomePage />} />
+          <Route path="/expenses/fixed" element={<FixedExpensesPage />} />
         </Route>
       </Routes>
     </Router>

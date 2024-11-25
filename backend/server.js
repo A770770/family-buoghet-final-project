@@ -1,24 +1,19 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
 require('dotenv').config();
 
+const app = express();
+const cors = require('cors');
+const server = http.createServer(app);
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
 const connectDB = require('./db/index');
 const incomeRoutes = require('./routes/income');
 const expenseRoutes = require('./routes/expenseRoutes');
 
-const app = express();
-const server = http.createServer(app);
 
-// מידלוורים
-app.use(helmet());
-app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json()); // Middleware to parse JSON bodies
 
 const allowedOrigins = [
     process.env.CLIENT_URL || 'http://localhost:3000',
@@ -41,11 +36,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/expenses', expenseRoutes);
+console.log("fffff",process.env.MONGO_URI);
 
-// התחברות למסד הנתונים
+// Connect to MongoDB (update with your connection string)
+// mongoose.connect(env.proccess.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+//     .then(() => console.log('MongoDB connected'))
+//     .catch(err => console.error('MongoDB connection error:', err));
+
 connectDB();
 
-const PORT = process.env.PORT || 5004;
-server.listen(PORT, () => {
-    console.log(`השרת פועל בפורט ${PORT}`);
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
