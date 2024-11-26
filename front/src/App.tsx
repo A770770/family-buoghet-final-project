@@ -11,6 +11,9 @@ import AddIncomePage from './pages/AddIncomePage';
 import PrivateRoute from './components/PrivateRoute';
 import SignupPage from './pages/SignupPage';
 import FixedExpensesPage from './pages/FixedExpensesPage';
+import ChildrenManagementPage from './pages/ChildrenManagementPage';
+import ChildDashboardPage from './pages/ChildDashboardPage';
+import ManageChildrenPage from './pages/ManageChildrenPage';
 
 const App: React.FC = () => {
   return (
@@ -22,6 +25,7 @@ const App: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/child-dashboard" element={<ChildDashboardPage />} />
         
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<DashboardPage />} />
@@ -30,6 +34,8 @@ const App: React.FC = () => {
           <Route path="/expenses/add" element={<AddExpensePage />} />
           <Route path="/income/add" element={<AddIncomePage />} />
           <Route path="/expenses/fixed" element={<FixedExpensesPage />} />
+          <Route path="/children" element={<ChildrenManagementPage />} />
+          <Route path="/manage-children" element={<ManageChildrenPage />} />
         </Route>
       </Routes>
       <ToastContainer

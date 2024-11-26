@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
         ref: 'User',
         default: null
     },
+    children: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Child'
+    }],
     failedLoginAttempts: {
         type: Number,
         default: 0

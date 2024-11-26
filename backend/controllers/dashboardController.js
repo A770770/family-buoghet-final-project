@@ -99,6 +99,9 @@ exports.getDashboardData = async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting dashboard data:', error);
-    res.status(500).json({ message: 'שגיאה בטעינת נתוני הדשבורד' });
+    res.status(500).json({ 
+      message: 'שגיאה בטעינת נתוני הדשבורד',
+      error: error.message 
+    });
   }
 };

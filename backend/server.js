@@ -11,7 +11,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const connectDB = require('./db/index');
 const incomeRoutes = require('./routes/income');
 const expenseRoutes = require('./routes/expenseRoutes');
-
+const childRoutes = require('./routes/childRoutes');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -36,17 +36,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/children', childRoutes);
 console.log("fffff",process.env.MONGO_URI);
-
-// Connect to MongoDB (update with your connection string)
-// mongoose.connect(env.proccess.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-//     .then(() => console.log('MongoDB connected'))
-//     .catch(err => console.error('MongoDB connection error:', err));
 
 connectDB();
 
 // Start the server
 const PORT = process.env.PORT || 5004;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

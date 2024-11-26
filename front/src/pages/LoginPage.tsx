@@ -1,59 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import { FaUser, FaLock, FaChild, FaUserTie } from 'react-icons/fa';
+import '../styles/LoginPage.css';
 
-const LoginPage = () => {
+interface LoginResponse {
+    token: string;
+    user: {
+        id: string;
+        username: string;
+        role: 'parent' | 'child';
+        parentId?: string;
+    };
+}
+
+const LoginPage: React.FC = () => {
     const navigate = useNavigate();
+    const [isParentMode, setIsParentMode] = useState(true);
     const [formData, setFormData] = useState({
         email: '',
-        password: ''
+        password: '',
     });
-    const [loading, setLoading] = useState(false);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-
-        if (!formData.email || !formData.password) {
-            toast.warning('נא למלא את כל השדות');
-            setLoading(false);
-            return;
-        }
-
-        // וידוא שהאימייל תקין
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-            toast.error('נא להזין כתובת דוא"ל תקינה');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const loginData = {
-                email: formData.email.toLowerCase(),
-                password: formData.password
-            };
-            
-            const response = await axios.post('http://localhost:5004/api/auth/login', loginData);
-            
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('userId', response.data.user.id);
-            localStorage.setItem('username', response.data.user.username);
-            localStorage.setItem('userRole', response.data.user.role);
-            
-            toast.success('התחברת בהצלחה!');
-            navigate('/dashboard');
-        } catch (err: any) {
-            console.error('Login error:', err);
-            if (err.response?.status === 401) {
-                toast.error('אימייל או סיסמה שגויים');
-            } else {
-                toast.error('שגיאה בהתחברות, נסה שוב מאוחר יותר');
-            }
-            setLoading(false);
-        }
-    };
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -62,42 +31,135 @@ const LoginPage = () => {
         });
     };
 
-    return (
-        <div className="login-container">
-            <div className="login-box">
-                <h2>התחברות</h2>
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (isParentMode && !formData.email) {
+            toast.error('נא למלא את כל השדות');
+            return;
+        }
+
+        if (!formData.password) {
+            toast.error('נא להזין סיסמה');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            
+            const endpoint = isParentMode
+                ? 'http://localhost:5004/api/auth/login'
+                : 'http://localhost:5004/api/children/login';
+
+            const loginData = isParentMode
+                ? {
+                    email: formData.email,
+                    password: formData.password,
+                    role: 'parent'
+                }
+                : {
+                    password: formData.password
+                };
+
+            const response = await axios.post<LoginResponse>(endpoint, loginData);
+
+            if (response.data?.token && response.data?.user) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('userId', response.data.user.id);
+                localStorage.setItem('username', response.data.user.username);
+                localStorage.setItem('role', response.data.user.role);
                 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>אימייל:</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                if (response.data.user.parentId) {
+                    localStorage.setItem('parentId', response.data.user.parentId);
+                }
+                
+                const targetPath = response.data.user.role === 'parent' 
+                    ? '/dashboard' 
+                    : '/child-dashboard';
+                
+                navigate(targetPath, { replace: true });
+                toast.success('התחברת בהצלחה!');
+            }
+        } catch (error: any) {
+            console.error('Login error:', error);
+            const errorMessage = error.response?.data?.message || 'שגיאה בהתחברות';
+            toast.error(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="login-container" dir="rtl">
+            <div className="login-card">
+                <h1>ברוכים הבאים</h1>
+                <p className="login-subtitle">התחבר למערכת ניהול תקציב המשפחה</p>
+
+                <div className="user-type-toggle">
+                    <button
+                        className={`toggle-button ${isParentMode ? 'active' : ''}`}
+                        onClick={() => setIsParentMode(true)}
+                    >
+                        <FaUserTie /> הורה
+                    </button>
+                    <button
+                        className={`toggle-button ${!isParentMode ? 'active' : ''}`}
+                        onClick={() => setIsParentMode(false)}
+                    >
+                        <FaChild /> ילד
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="login-form">
+                    {isParentMode && (
+                        <div className="form-group">
+                            <label>
+                                <FaUser className="input-icon" />
+                                אימייל
+                            </label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="הכנס את האימייל שלך"
+                                required
+                            />
+                        </div>
+                    )}
 
                     <div className="form-group">
-                        <label>סיסמה:</label>
+                        <label>
+                            <FaLock className="input-icon" />
+                            {isParentMode ? 'סיסמה' : 'הסיסמה שקיבלת מההורים'}
+                        </label>
                         <input
                             type="password"
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
+                            placeholder={isParentMode ? 'הכנס את הסיסמה שלך' : 'הכנס את הסיסמה שקיבלת'}
                             required
                         />
                     </div>
 
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'מתחבר...' : 'התחבר'}
+                    <button 
+                        type="submit" 
+                        className="login-button"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'מתחבר...' : 'התחברות'}
                     </button>
-                </form>
 
-                <div className="register-link">
-                    <p>אין לך חשבון? <span onClick={() => navigate('/signup')}>הירשם כאן</span></p>
-                </div>
+                    {isParentMode && (
+                        <p className="register-link">
+                            אין לך חשבון עדיין?{' '}
+                            <span onClick={() => navigate('/register')}>
+                                הירשם כאן
+                            </span>
+                        </p>
+                    )}
+                </form>
             </div>
         </div>
     );

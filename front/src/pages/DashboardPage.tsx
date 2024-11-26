@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/DashboardPage.css';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank } from 'react-icons/fa';
+import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank, FaChild } from 'react-icons/fa';
 import { FiMenu, FiUser, FiLogOut, FiSettings, FiPieChart, FiDollarSign } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 interface DashboardData {
     currentBalance: number;
@@ -66,6 +68,10 @@ const DashboardPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 const userId = localStorage.getItem('userId');
+                if (!token || !userId) {
+                    navigate('/login');
+                    return;
+                }
                 const response = await axios.get(
                     `http://localhost:5004/api/dashboard/getDashboardData/${userId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
@@ -74,13 +80,57 @@ const DashboardPage: React.FC = () => {
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
-                setError('שגיאה בטעינת נתוני הדשבורד');
+                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    localStorage.clear();
+                    navigate('/login');
+                } else {
+                    setError('שגיאה בטעינת נתוני הדשבורד');
+                }
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, []);
+    }, [navigate]);
+
+    useEffect(() => {
+        const checkNewRequests = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const userId = localStorage.getItem('userId');
+                
+                const response = await axios.get(
+                    `http://localhost:5004/api/parents/${userId}/pending-requests`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }
+                );
+
+                const pendingRequests = response.data;
+                
+                if (pendingRequests.length > 0) {
+                    toast.info(
+                        <div>
+                            <h4>יש בקשות חדשות מהילדים שלך!</h4>
+                            <p>לחץ כאן לצפייה בבקשות</p>
+                        </div>,
+                        {
+                            onClick: () => navigate('/manage-children'),
+                            autoClose: false
+                        }
+                    );
+                }
+            } catch (error) {
+                console.error('Error checking new requests:', error);
+            }
+        };
+
+        checkNewRequests();
+        // בדיקה כל 5 דקות
+        const interval = setInterval(checkNewRequests, 5 * 60 * 1000);
+
+        return () => clearInterval(interval);
+    }, [navigate]);
 
     const handleLogout = () => {
         localStorage.clear();
@@ -139,52 +189,37 @@ const DashboardPage: React.FC = () => {
                     <button 
                         className="hamburger-button" 
                         onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
+                        aria-label="תפריט"
                     >
-                        <FaBars size={24} />
+                        <FaBars />
                     </button>
                     {showHamburgerMenu && (
                         <div 
                             className="hamburger-menu"
                             onMouseLeave={() => setShowHamburgerMenu(false)}
                         >
-                            <button 
-                                onClick={() => {
-                                    navigate('/expenses/add');
-                                    setShowHamburgerMenu(false);
-                                }}
-                                className="add-expense"
-                            >
-                                <FaPlusCircle /> הוספת הוצאה
-                            </button>
-                            <button 
-                                onClick={() => {
-                                    navigate('/income/add');
-                                    setShowHamburgerMenu(false);
-                                }}
-                                className="add-income"
-                            >
-                                <FaPiggyBank /> הוספת הכנסה
-                            </button>
-                            <button 
-                                onClick={() => {
-                                    navigate('/expenses/fixed');
-                                    setShowHamburgerMenu(false);
-                                }}
-                                className="fixed-expenses"
-                            >
-                                <FaCog /> הוצאות קבועות
-                            </button>
-                            {userInfo?.role === 'parent' && (
-                                <button 
-                                    onClick={() => {
-                                        navigate('/requests');
-                                        setShowHamburgerMenu(false);
-                                    }}
-                                    className="requests"
-                                >
-                                    <FaMoneyBillWave /> בקשות ממתינות
-                                </button>
-                            )}
+                            <div className="menu-items">
+                                <Link to="/expenses/add" className="menu-item add-expense" onClick={() => setShowHamburgerMenu(false)}>
+                                    <FaPlusCircle /> הוספת הוצאה
+                                </Link>
+                                <Link to="/income/add" className="menu-item add-income" onClick={() => setShowHamburgerMenu(false)}>
+                                    <FaPiggyBank /> הוספת הכנסה
+                                </Link>
+                                <div className="menu-divider" />
+                                <Link to="/expenses/fixed" className="menu-item fixed-expenses" onClick={() => setShowHamburgerMenu(false)}>
+                                    <FaCog /> הוצאות קבועות
+                                </Link>
+                                {userInfo?.role === 'parent' && (
+                                    <>
+                                        <Link to="/requests" className="menu-item requests" onClick={() => setShowHamburgerMenu(false)}>
+                                            <FaMoneyBillWave /> בקשות ממתינות
+                                        </Link>
+                                        <Link to="/children" className="menu-item children" onClick={() => setShowHamburgerMenu(false)}>
+                                            <FaChild /> ניהול ילדים
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
