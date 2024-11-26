@@ -69,11 +69,6 @@ exports.signup = async (req, res) => {
             }
         }
 
-        // הצפנת הסיסמה
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        console.log('הסיסמה הוצפנה בהצלחה');
-
         // אם זה ילד, בדוק שההורה קיים
         if (role === 'child' && parentEmail) {
             const parent = await User.findOne({ 
@@ -93,7 +88,7 @@ exports.signup = async (req, res) => {
         const user = new User({
             username: username.toLowerCase(),
             email: email.toLowerCase(),
-            password: hashedPassword,
+            password: password, // הסיסמה תוצפן אוטומטית במודל
             role,
             parentEmail: role === 'child' ? parentEmail.toLowerCase() : undefined
         });
@@ -144,19 +139,31 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
         console.log('ניסיון התחברות עם אימייל:', email);
+        console.log('סיסמה שהתקבלה (אורך):', password?.length);
 
         // בדיקת משתמש קיים - נחפש לפי אימייל באותיות קטנות
         const user = await User.findOne({ email: email.toLowerCase() });
         
         console.log('משתמש נמצא:', user ? 'כן' : 'לא');
+        if (user) {
+            console.log('אורך הסיסמה המוצפנת:', user.password?.length);
+        }
 
         if (!user) {
             console.log('משתמש לא נמצא עם האימייל:', email);
             return res.status(401).json({ message: 'אימייל או סיסמה שגויים' });
         }
 
+        // וידוא שיש סיסמה
+        if (!password) {
+            console.log('לא התקבלה סיסמה');
+            return res.status(401).json({ message: 'אימייל או סיסמה שגויים' });
+        }
+
         // בדיקת סיסמה
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log('סיסמה שהוזנה:', password);
+        console.log('סיסמה מוצפנת:', user.password);
         console.log('סיסמה תואמת:', isMatch ? 'כן' : 'לא');
 
         if (!isMatch) {

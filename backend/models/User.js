@@ -69,9 +69,18 @@ userSchema.virtual('isLocked').get(function() {
 
 // הצפנת סיסמה לפני שמירה
 userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
-    
+    // אם הסיסמה לא שונתה, המשך
+    if (!this.isModified('password')) {
+        return next();
+    }
+
     try {
+        // בדוק אם הסיסמה כבר מוצפנת
+        if (this.password.startsWith('$2a$')) {
+            return next();
+        }
+
+        // הצפן את הסיסמה
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
         next();
