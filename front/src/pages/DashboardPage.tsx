@@ -20,6 +20,7 @@ import { UpcomingExpenses } from '../components/UpcomingExpenses';
 import { DashboardData, ExpenseCategory } from '../types/dashboard';
 import { FaCog } from 'react-icons/fa';
 import HamburgerMenu from '../components/HamburgerMenu';
+import { FixedExpensesDashboard } from '../components/FixedExpensesDashboard';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -58,6 +59,7 @@ const DashboardPage: React.FC = () => {
         setLoading(true);
         setError('');
 
+        // מביא את כל הנתונים לדשבורד
         const dashboardResponse = await axios.get(
           `http://localhost:5004/api/dashboard/getDashboardData/${userId}`,
           {
@@ -67,7 +69,15 @@ const DashboardPage: React.FC = () => {
           }
         );
 
-        setDashboardData(dashboardResponse.data);
+        // מסנן את ההוצאות הקבועות מהדשבורד הראשי
+        const filteredExpenses = dashboardResponse.data.expensesByCategory.filter(
+          (expense: ExpenseCategory) => !expense.isRecurring
+        );
+
+        setDashboardData({
+          ...dashboardResponse.data,
+          expensesByCategory: filteredExpenses
+        });
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('שגיאה בטעינת הנתונים. אנא נסה שוב.');
@@ -177,78 +187,71 @@ const DashboardPage: React.FC = () => {
             <div className="stats">
               <div className="balance">
                 <span>יתרה בקופה</span>
-                <span>
-                  {formatNumber(dashboardData.currentBalance)}
-                </span>
+                <span>{formatNumber(dashboardData.currentBalance)}</span>
               </div>
               <div className="expenses">
                 <span>הוצאות החודש</span>
-                <span>
-                  {formatNumber(dashboardData.totalExpenses)}
-                </span>
+                <span>{formatNumber(dashboardData.totalExpenses)}</span>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="charts-grid">
-          <div className="card category-chart">
-            <h3>התפלגות הוצאות לפי קטגוריה</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={dashboardData.expensesByCategory}
-                  dataKey="amount"
-                  nameKey="category"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {dashboardData.expensesByCategory.map(
-                    (entry: ExpenseCategory, index: number) => (
+        <section className="expenses-overview">
+          <h2 className="section-title">סיכום הוצאות חודשי</h2>
+          <div className="pie-charts-container">
+            <div className="card category-chart">
+              <h3>הוצאות שוטפות החודש</h3>
+              <div className="chart-description">
+                הוצאות שוטפות כמו קניות בסופר, בילויים, וקניות שונות מתוך ההכנסה החודשית
+              </div>
+              <div className="chart-amount">
+                סה"כ: {formatNumber(dashboardData.expensesByCategory.reduce((sum, exp) => sum + exp.amount, 0))}
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={dashboardData.expensesByCategory}
+                    dataKey="amount"
+                    nameKey="category"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label={(entry) => `${entry.category}: ${formatNumber(entry.amount)}`}
+                  >
+                    {dashboardData.expensesByCategory.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    )
-                  )}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="card category-chart">
+              <FixedExpensesDashboard />
+            </div>
           </div>
         </section>
 
-        <section className="recent-expenses">
-          <h3>הוצאות אחרונות</h3>
-          <div className="expenses-list">
-            {dashboardData.recentExpenses?.length > 0 && (
-              <RecentExpenses expenses={dashboardData.recentExpenses} />
-            )}
+        <section className="recent-activity">
+          <h2 className="section-title">פעילות אחרונה</h2>
+          <div className="card">
+            <RecentExpenses expenses={dashboardData.recentExpenses} />
           </div>
         </section>
 
         <section className="upcoming-expenses">
-          <h3>הוצאות עתידיות</h3>
-          <div className="expenses-list">
-            {dashboardData.upcomingExpenses?.length > 0 && (
+          <h2 className="section-title">הוצאות עתידיות</h2>
+          <div className="card">
+            {dashboardData.upcomingExpenses?.length > 0 ? (
               <UpcomingExpenses expenses={dashboardData.upcomingExpenses} />
+            ) : (
+              <p className="no-data">אין הוצאות עתידיות</p>
             )}
           </div>
         </section>
-
-        <div className="dashboard-section pending-requests">
-          <h2>בקשות ממתינות</h2>
-          {dashboardData.pendingRequests.count > 0 ? (
-            <div className="pending-requests-summary">
-              <span className="count">{dashboardData.pendingRequests.count}</span>
-              <span className="text">בקשות ממתינות לאישור</span>
-              <button onClick={() => navigate('/requests')} className="view-all-btn">
-                צפה בכל הבקשות
-              </button>
-            </div>
-          ) : (
-            <p className="no-requests">אין בקשות ממתינות</p>
-          )}
-        </div>
       </main>
     </div>
   );

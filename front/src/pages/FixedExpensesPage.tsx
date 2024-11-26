@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FaWater, FaBolt, FaWifi, FaHome, FaCar, FaPhone, FaCalendarAlt, FaTrash, FaPlus } from 'react-icons/fa';
 import '../styles/FixedExpensesPage.css';
-import { FaPlus, FaWater, FaBolt, FaWifi, FaHome, FaCar, FaPhone, FaCalendarAlt } from 'react-icons/fa';
-
 
 interface FixedExpense {
   _id: string;
@@ -17,36 +16,37 @@ interface FixedExpense {
   };
 }
 
+interface NewExpense {
+  amount: string;
+  category: string;
+}
 
 const FixedExpensesPage: React.FC = () => {
   const [expenses, setExpenses] = useState<FixedExpense[]>([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newExpense, setNewExpense] = useState({
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [newExpense, setNewExpense] = useState<NewExpense>({
     amount: '',
     category: '',
-    dueDate: ''
   });
 
-
   const categoryIcons: { [key: string]: { icon: JSX.Element; color: string } } = {
-    'מים': { icon: <FaWater />, color: '#3498db' },
-    'חשמל': { icon: <FaBolt />, color: '#f1c40f' },
-    'אינטרנט': { icon: <FaWifi />, color: '#2ecc71' },
-    'שכירות': { icon: <FaHome />, color: '#e74c3c' },
-    'רכב': { icon: <FaCar />, color: '#9b59b6' },
-    'טלפון': { icon: <FaPhone />, color: '#1abc9c' }
+    'מים': { icon: <FaWater size={20} />, color: '#3498db' },
+    'חשמל': { icon: <FaBolt size={20} />, color: '#f1c40f' },
+    'אינטרנט': { icon: <FaWifi size={20} />, color: '#2ecc71' },
+    'שכירות': { icon: <FaHome size={20} />, color: '#e74c3c' },
+    'רכב': { icon: <FaCar size={20} />, color: '#9b59b6' },
+    'טלפון': { icon: <FaPhone size={20} />, color: '#1abc9c' }
   };
-
 
   useEffect(() => {
     fetchFixedExpenses();
   }, []);
 
-
-  const fetchFixedExpenses = async () => {
+  const fetchFixedExpenses = async (): Promise<void> => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5004/api/expenses/fixed', {
+      const response = await axios.get<FixedExpense[]>('http://localhost:5004/api/expenses/fixed', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setExpenses(response.data);
@@ -55,31 +55,18 @@ const FixedExpensesPage: React.FC = () => {
     }
   };
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-
-      // יצירת תאריך החיוב הבא
-      const today = new Date();
-      const dueDay = parseInt(newExpense.dueDate);
-      const nextDate = new Date(today.getFullYear(), today.getMonth(), dueDay);
-
-      // אם התאריך כבר עבר החודש, נקבע לחודש הבא
-      if (nextDate < today) {
-        nextDate.setMonth(nextDate.getMonth() + 1);
-      }
-
-
       const expenseData = {
         amount: Number(newExpense.amount),
         category: newExpense.category,
         description: `הוצאה קבועה - ${newExpense.category}`,
         isRecurring: true,
         recurringDetails: {
-          frequency: 'monthly',
-          nextDate: nextDate
+          frequency: 'monthly' as const,
+          nextDate: new Date(selectedDate)
         }
       };
 
@@ -90,17 +77,16 @@ const FixedExpensesPage: React.FC = () => {
         }
       });
 
-
       fetchFixedExpenses();
-      setShowAddForm(false);
-      setNewExpense({ amount: '', category: '', dueDate: '' });
+      setShowModal(false);
+      setNewExpense({ amount: '', category: '' });
+      setSelectedDate('');
     } catch (error) {
       console.error('Error adding fixed expense:', error);
     }
   };
 
-
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<void> => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
       try {
         const token = localStorage.getItem('token');
@@ -114,31 +100,26 @@ const FixedExpensesPage: React.FC = () => {
     }
   };
 
-
   return (
-    <div className="fixed-expenses-container">
-      <header className="fixed-expenses-header">
+    <div dir="rtl" className="fixed-expenses-container">
+      <div className="fixed-expenses-header">
         <h1>הוצאות קבועות</h1>
-        <button
-          className="add-expense-button"
-          onClick={() => setShowAddForm(true)}
-        >
+        <button className="add-button" onClick={() => setShowModal(true)}>
           <FaPlus /> הוספת הוצאה קבועה
         </button>
-      </header>
-
+      </div>
 
       <div className="expenses-grid">
-        {expenses.map(expense => (
+        {expenses.map((expense) => (
           <div key={expense._id} className="expense-card">
-            <div className="expense-icon" style={{ backgroundColor: categoryIcons[expense.category]?.color || '#ddd' }}>
-              {categoryIcons[expense.category]?.icon || <FaHome />}
+            <div className="expense-icon" style={{ backgroundColor: categoryIcons[expense.category]?.color + '20' }}>
+              {categoryIcons[expense.category]?.icon}
             </div>
             <div className="expense-details">
               <h3>{expense.category}</h3>
               <p className="amount">₪{expense.amount.toLocaleString()}</p>
               <p className="due-date">
-                <FaCalendarAlt /> {new Date(expense.recurringDetails.nextDate).getDate()} לחודש
+                <FaCalendarAlt /> חיוב ב-{expense.recurringDetails?.nextDate ? new Date(expense.recurringDetails.nextDate).getDate() : new Date().getDate()} לכל חודש
               </p>
             </div>
             <button
@@ -146,27 +127,26 @@ const FixedExpensesPage: React.FC = () => {
               onClick={() => handleDelete(expense._id)}
               aria-label="מחק הוצאה"
             >
-              ✕
+              <FaTrash />
             </button>
           </div>
         ))}
       </div>
 
-
-      {showAddForm && (
+      {showModal && (
         <div className="modal-overlay">
-          <div className="add-expense-modal">
+          <div className="modal">
             <h2>הוספת הוצאה קבועה</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>קטגוריה</label>
                 <select
                   value={newExpense.category}
-                  onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}
+                  onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
                   required
                 >
                   <option value="">בחר קטגוריה</option>
-                  {Object.keys(categoryIcons).map(category => (
+                  {Object.keys(categoryIcons).map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
@@ -174,42 +154,33 @@ const FixedExpensesPage: React.FC = () => {
                 </select>
               </div>
 
-
               <div className="form-group">
                 <label>סכום</label>
                 <input
                   type="number"
                   value={newExpense.amount}
-                  onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
+                  onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
                   required
                   placeholder="הכנס סכום"
                 />
               </div>
 
-
               <div className="form-group">
-                <label>יום בחודש לתשלום</label>
-                <div className="date-input-wrapper">
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={newExpense.dueDate}
-                    onChange={e => setNewExpense({ ...newExpense, dueDate: e.target.value })}
-                    required
-                    placeholder="בחר יום בחודש"
-                  />
-                  <FaCalendarAlt className="calendar-icon" />
-                </div>
+                <label>תאריך חיוב</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  required
+                />
               </div>
-
 
               <div className="form-actions">
                 <button type="submit" className="submit-button">הוסף הוצאה</button>
                 <button
                   type="button"
                   className="cancel-button"
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => setShowModal(false)}
                 >
                   ביטול
                 </button>
@@ -221,6 +192,5 @@ const FixedExpensesPage: React.FC = () => {
     </div>
   );
 };
-
 
 export default FixedExpensesPage;

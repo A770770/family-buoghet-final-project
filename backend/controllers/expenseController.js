@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 // הוספת הוצאה חדשה
 exports.addExpense = async (req, res) => {
     try {
-        const { amount, description, category, date, isRecurring } = req.body;
+        const { amount, description, category, date, isRecurring, recurringDetails } = req.body;
         const userId = req.user.id;
 
         if (!userId) {
@@ -24,7 +24,8 @@ exports.addExpense = async (req, res) => {
             description,
             category,
             date: date || new Date(),
-            isRecurring: isRecurring || false
+            isRecurring: isRecurring || false,
+            ...(isRecurring && recurringDetails ? { recurringDetails } : {})
         });
 
         await expense.save();
@@ -215,6 +216,33 @@ exports.getExpenseHistory = async (req, res) => {
         res.status(500).json({ message: 'שגיאה בקבלת היסטוריית ההוצאות', error: error.message });
     }
 };
+
+// קבלת הוצאות קבועות
+exports.getFixedExpenses = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const expenses = await Expense.find({ 
+            userId: new mongoose.Types.ObjectId(userId),
+            isRecurring: true 
+        }).lean();
+
+        // מוסיף ברירת מחדל ל-recurringDetails אם חסר
+        const processedExpenses = expenses.map(expense => ({
+            ...expense,
+            recurringDetails: expense.recurringDetails || {
+                frequency: 'monthly',
+                nextDate: expense.date || new Date()
+            }
+        }));
+        
+        res.json(processedExpenses);
+    } catch (error) {
+        console.error('שגיאה בקבלת הוצאות קבועות:', error);
+        res.status(500).json({ 
+            message: 'שגיאה בקבלת הוצאות קבועות',
+            error: error.message 
+        });
+    }
+};
+
 module.exports = exports;
-
-
