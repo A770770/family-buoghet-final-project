@@ -22,8 +22,21 @@ const LoginPage = () => {
             return;
         }
 
+        // וידוא שהאימייל תקין
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setError('נא להזין כתובת דוא"ל תקינה');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const response = await axios.post('http://localhost:5004/api/auth/login', formData);
+            const loginData = {
+                email: formData.email.toLowerCase(),
+                password: formData.password
+            };
+            
+            const response = await axios.post('http://localhost:5004/api/auth/login', loginData);
             
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('userId', response.data.user.id);
@@ -32,7 +45,12 @@ const LoginPage = () => {
             
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'שגיאה בהתחברות');
+            console.error('Login error:', err);
+            if (err.response?.status === 401) {
+                setError('אימייל או סיסמה שגויים');
+            } else {
+                setError(err.response?.data?.message || 'שגיאה בהתחברות');
+            }
         } finally {
             setLoading(false);
         }

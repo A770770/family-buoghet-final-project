@@ -1,6 +1,6 @@
 const Expense = require('../models/Expense');
 const Budget = require('../models/Budget');
-const { refreshDashboardInternal } = require('./dashboardController');
+const { getDashboardData, calculateCurrentBalance } = require('./dashboardController');
 const Income = require('../models/Income');
 const mongoose = require('mongoose');
 
@@ -39,13 +39,6 @@ exports.addExpense = async (req, res) => {
         } catch (budgetError) {
             console.error('שגיאה בעדכון התקציב:', budgetError);
             // ממשיכים גם אם יש שגיאה בעדכון התקציב
-        }
-
-        // רענון נתוני הדשבורד
-        try {
-            await refreshDashboardInternal(userId);
-        } catch (dashboardError) {
-            console.error('שגיאה ברענון הדשבורד:', dashboardError);
         }
 
         res.status(201).json({

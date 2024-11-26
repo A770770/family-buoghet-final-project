@@ -25,15 +25,11 @@ const AddIncomePage: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            // רענון הדשבורד
-            await axios.get(
-                `http://localhost:5004/api/dashboard/refreshDashboard/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
+            // נווט ישירות לדשבורד - הוא יתרענן אוטומטית
             navigate('/dashboard');
         } catch (error: any) {
-            setError(error.response?.data?.error || 'שגיאה בהוספת ההכנסה');
+            console.error('Error adding income:', error);
+            setError('שגיאה בהוספת ההכנסה. אנא נסה שוב.');
         }
     };
 
@@ -88,4 +84,4 @@ const AddIncomePage: React.FC = () => {
     );
 };
 
-export default AddIncomePage; 
+export default AddIncomePage;

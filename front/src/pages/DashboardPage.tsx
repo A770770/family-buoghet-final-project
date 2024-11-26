@@ -41,17 +41,25 @@ const DashboardPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 const userId = localStorage.getItem('userId');
-                const response = await axios.get(`http://localhost:5004/api/users/${userId}`, {
+                if (!token || !userId) {
+                    navigate('/login');
+                    return;
+                }
+                const response = await axios.get(`http://localhost:5004/api/auth/users/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setUserInfo(response.data);
             } catch (error) {
                 console.error('Error fetching user info:', error);
+                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    localStorage.clear();
+                    navigate('/login');
+                }
             }
         };
 
         fetchUserInfo();
-    }, []);
+    }, [navigate]);
 
     useEffect(() => {
         const fetchData = async () => {

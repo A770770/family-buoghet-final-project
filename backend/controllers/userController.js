@@ -41,9 +41,17 @@ exports.checkEmail = async (req, res) => {
 // הרשמה
 exports.signup = async (req, res) => {
     try {
+        console.log('התחלת תהליך הרשמה:', req.body);
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            console.log('שגיאות ולידציה:', errors.array());
+            return res.status(400).json({ errors: errors.array() });
+        }
+
         const { username, email, password, role, parentEmail } = req.body;
         
         // בדיקת משתמש קיים
+        console.log('בודק משתמש קיים עם:', { email, username });
         const existingUser = await User.findOne({
             $or: [
                 { email: email.toLowerCase() },
@@ -52,12 +60,19 @@ exports.signup = async (req, res) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ 
-                message: existingUser.email === email.toLowerCase() 
-                    ? 'כתובת האימייל כבר קיימת במערכת' 
-                    : 'שם המשתמש כבר קיים במערכת'
-            });
+            console.log('נמצא משתמש קיים:', existingUser);
+            if (existingUser.email === email.toLowerCase()) {
+                return res.status(400).json({ message: 'כתובת האימייל כבר קיימת במערכת' });
+            }
+            if (existingUser.username === username.toLowerCase()) {
+                return res.status(400).json({ message: 'שם המשתמש כבר קיים במערכת' });
+            }
         }
+
+        // הצפנת הסיסמה
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        console.log('הסיסמה הוצפנה בהצלחה');
 
         // אם זה ילד, בדוק שההורה קיים
         if (role === 'child' && parentEmail) {
@@ -73,29 +88,53 @@ exports.signup = async (req, res) => {
             }
         }
 
+        // יצירת משתמש חדש
+        console.log('מנסה ליצור משתמש חדש');
         const user = new User({
             username: username.toLowerCase(),
             email: email.toLowerCase(),
-            password,
+            password: hashedPassword,
             role,
             parentEmail: role === 'child' ? parentEmail.toLowerCase() : undefined
         });
 
-        await user.save();
+        try {
+            await user.save();
+            console.log('משתמש נשמר בהצלחה:', {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            });
+        } catch (saveError) {
+            console.error('שגיאה בשמירת המשתמש:', saveError);
+            throw saveError;
+        }
+
+        // יצירת טוקן
         const token = generateToken(user);
+        console.log('טוקן נוצר בהצלחה');
 
         res.status(201).json({
             token,
             user: {
                 id: user._id,
                 username: user.username,
+                email: user.email,
                 role: user.role
             }
         });
+
     } catch (error) {
+        console.error('שגיאה בהרשמה:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         res.status(500).json({ 
-            message: 'שגיאה בתהליך ההרשמה',
-            error: error.message 
+            message: 'שגיאה בהרשמה', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
@@ -104,29 +143,53 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        console.log('ניסיון התחברות עם אימייל:', email);
+
+        // בדיקת משתמש קיים - נחפש לפי אימייל באותיות קטנות
+        const user = await User.findOne({ email: email.toLowerCase() });
         
+        console.log('משתמש נמצא:', user ? 'כן' : 'לא');
+
         if (!user) {
-            return res.status(400).json({ message: 'פרטי התחברות שגויים' });
+            console.log('משתמש לא נמצא עם האימייל:', email);
+            return res.status(401).json({ message: 'אימייל או סיסמה שגויים' });
         }
 
-        const isMatch = await user.comparePassword(password);
+        // בדיקת סיסמה
+        const isMatch = await bcrypt.compare(password, user.password);
+        console.log('סיסמה תואמת:', isMatch ? 'כן' : 'לא');
+
         if (!isMatch) {
-            return res.status(400).json({ message: 'פרטי התחברות שגויים' });
+            console.log('סיסמה לא תואמת למשתמש:', email);
+            return res.status(401).json({ message: 'אימייל או סיסמה שגויים' });
         }
 
+        // יצירת טוקן
         const token = generateToken(user);
-        
+
+        // עדכון זמן התחברות אחרון
+        user.lastLogin = Date.now();
+        await user.save();
+
+        console.log('התחברות מוצלחת:', user.email);
+
         res.json({
             token,
             user: {
                 id: user._id,
                 username: user.username,
+                email: user.email,
                 role: user.role
             }
         });
+
     } catch (error) {
-        res.status(500).json({ message: 'שגיאת שרת' });
+        console.error('שגיאה בהתחברות:', error);
+        res.status(500).json({ 
+            message: 'שגיאה בהתחברות',
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 
@@ -178,6 +241,7 @@ exports.generateLinkCode = async (req, res) => {
         });
     }
 };
+
 // קישור חשבונות
 exports.linkAccounts = async (req, res) => {
     try {

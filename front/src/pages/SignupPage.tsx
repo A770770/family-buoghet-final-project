@@ -63,26 +63,48 @@ const SignupPage: React.FC = () => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
-    console.log(formData);
+    
+    // נקה שגיאות כשהמשתמש מתחיל להקליד
+    setError('');
   };
 
   const validateForm = (): boolean => {
+    // בדיקת אימייל
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
       setError('נא להזין דוא"ל');
       return false;
     }
+    if (!emailRegex.test(formData.email)) {
+      setError('נא להזין כתובת דוא"ל תקינה');
+      return false;
+    }
+
+    // בדיקת שם משתמש
     if (!formData.username.trim()) {
       setError('נא להזין שם משתמש');
+      return false;
+    }
+    if (formData.username.length < 3) {
+      setError('שם המשתמש חייב להכיל לפחות 3 תווים');
+      return false;
+    }
+
+    // בדיקת סיסמה
+    if (!formData.password) {
+      setError('נא להזין סיסמה');
       return false;
     }
     if (formData.password.length < 6) {
       setError('הסיסמה חייבת להכיל לפחות 6 תווים');
       return false;
     }
+
     return true;
   };
 
