@@ -110,14 +110,25 @@ const DashboardPage: React.FC = () => {
         <div className="dashboard-container">
             <header className="dashboard-header">
                 <div className="header-left">
-                    <div className="user-button" onClick={() => setShowUserMenu(!showUserMenu)}>
+                    <div 
+                        className="user-button" 
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                    >
                         <FaUser size={24} />
                     </div>
                     {showUserMenu && (
-                        <div className="user-menu">
-                            <p>שם: {userInfo?.name}</p>
-                            <p>אימייל: {userInfo?.email}</p>
-                            <p>תפקיד: {userInfo?.role === 'parent' ? 'הורה' : 'ילד'}</p>
+                        <div 
+                            className="user-menu"
+                            onMouseLeave={() => setShowUserMenu(false)}
+                        >
+                            <div className="user-info">
+                                <p><strong>שם:</strong> {userInfo?.username}</p>
+                                <p><strong>אימייל:</strong> {userInfo?.email}</p>
+                                <p>{userInfo?.role === 'parent' ? 'הורה' : 'ילד'}</p>
+                            </div>
+                            <button onClick={handleLogout} className="logout-button">
+                                <FaSignOutAlt /> התנתק
+                            </button>
                         </div>
                     )}
                 </div>
@@ -125,31 +136,55 @@ const DashboardPage: React.FC = () => {
                 <h1>דשבורד משפחתי</h1>
 
                 <div className="header-right">
-                    <button className="hamburger-button" onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}>
+                    <button 
+                        className="hamburger-button" 
+                        onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
+                    >
                         <FaBars size={24} />
                     </button>
                     {showHamburgerMenu && (
-                        <div className="hamburger-menu">
-                            <button onClick={() => navigate('/expenses/add')}>
+                        <div 
+                            className="hamburger-menu"
+                            onMouseLeave={() => setShowHamburgerMenu(false)}
+                        >
+                            <button 
+                                onClick={() => {
+                                    navigate('/expenses/add');
+                                    setShowHamburgerMenu(false);
+                                }}
+                                className="add-expense"
+                            >
                                 <FaPlusCircle /> הוספת הוצאה
                             </button>
-                            <button onClick={() => navigate('/income/add')}>
+                            <button 
+                                onClick={() => {
+                                    navigate('/income/add');
+                                    setShowHamburgerMenu(false);
+                                }}
+                                className="add-income"
+                            >
                                 <FaPiggyBank /> הוספת הכנסה
                             </button>
-                            <button onClick={() => navigate('/expenses/fixed')}>
+                            <button 
+                                onClick={() => {
+                                    navigate('/expenses/fixed');
+                                    setShowHamburgerMenu(false);
+                                }}
+                                className="fixed-expenses"
+                            >
                                 <FaCog /> הוצאות קבועות
                             </button>
-                            <button onClick={() => navigate('/expenses/history')}>
-                                <FaHistory /> היסטוריית הוצאות
-                            </button>
                             {userInfo?.role === 'parent' && (
-                                <button onClick={() => navigate('/requests')}>
+                                <button 
+                                    onClick={() => {
+                                        navigate('/requests');
+                                        setShowHamburgerMenu(false);
+                                    }}
+                                    className="requests"
+                                >
                                     <FaMoneyBillWave /> בקשות ממתינות
                                 </button>
                             )}
-                            <button onClick={handleLogout} className="logout-button">
-                                <FaSignOutAlt /> התנתק
-                            </button>
                         </div>
                     )}
                 </div>

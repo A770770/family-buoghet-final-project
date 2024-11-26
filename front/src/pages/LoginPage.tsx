@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import axios from 'axios';
 
 const LoginPage = () => {
@@ -8,16 +9,14 @@ const LoginPage = () => {
         email: '',
         password: ''
     });
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         if (!formData.email || !formData.password) {
-            setError('נא למלא את כל השדות');
+            toast.warning('נא למלא את כל השדות');
             setLoading(false);
             return;
         }
@@ -25,7 +24,7 @@ const LoginPage = () => {
         // וידוא שהאימייל תקין
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            setError('נא להזין כתובת דוא"ל תקינה');
+            toast.error('נא להזין כתובת דוא"ל תקינה');
             setLoading(false);
             return;
         }
@@ -43,59 +42,63 @@ const LoginPage = () => {
             localStorage.setItem('username', response.data.user.username);
             localStorage.setItem('userRole', response.data.user.role);
             
+            toast.success('התחברת בהצלחה!');
             navigate('/dashboard');
         } catch (err: any) {
             console.error('Login error:', err);
             if (err.response?.status === 401) {
-                setError('אימייל או סיסמה שגויים');
+                toast.error('אימייל או סיסמה שגויים');
             } else {
-                setError(err.response?.data?.message || 'שגיאה בהתחברות');
+                toast.error('שגיאה בהתחברות, נסה שוב מאוחר יותר');
             }
-        } finally {
             setLoading(false);
         }
     };
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
     return (
         <div className="login-container">
-            <form onSubmit={handleSubmit} className="login-form">
-                <h1>התחברות</h1>
+            <div className="login-box">
+                <h2>התחברות</h2>
                 
-                <div className="form-group">
-                    <label>דוא"ל</label>
-                    <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        placeholder="הכנס דוא״ל"
-                    />
-                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>אימייל:</label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
 
-                <div className="form-group">
-                    <label>סיסמה</label>
-                    <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        placeholder="הכנס סיסמה"
-                    />
-                </div>
+                    <div className="form-group">
+                        <label>סיסמה:</label>
+                        <input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
 
-                {error && <div className="error-message">{error}</div>}
-
-                <button type="submit" disabled={loading}>
-                    {loading ? 'מתחבר...' : 'התחבר'}
-                </button>
-
-                <div className="form-links">
-                    <button type="button" onClick={() => navigate('/signup')} className="link-button">
-                        הרשמה למערכת
+                    <button type="submit" disabled={loading}>
+                        {loading ? 'מתחבר...' : 'התחבר'}
                     </button>
-                    <button type="button" onClick={() => navigate('/forgot-password')} className="link-button">
-                        שכחתי סיסמה
-                    </button>
+                </form>
+
+                <div className="register-link">
+                    <p>אין לך חשבון? <span onClick={() => navigate('/signup')}>הירשם כאן</span></p>
                 </div>
-            </form>
+            </div>
         </div>
     );
 };

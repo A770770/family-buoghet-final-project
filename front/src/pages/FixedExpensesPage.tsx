@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { FaWater, FaBolt, FaWifi, FaHome, FaCar, FaPhone, FaCalendarAlt, FaTrash, FaPlus } from 'react-icons/fa';
 import '../styles/FixedExpensesPage.css';
 
@@ -46,57 +47,86 @@ const FixedExpensesPage: React.FC = () => {
   const fetchFixedExpenses = async (): Promise<void> => {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        toast.error('אנא התחבר מחדש למערכת');
+        return;
+      }
+
       const response = await axios.get<FixedExpense[]>('http://localhost:5004/api/expenses/fixed', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setExpenses(response.data);
     } catch (error) {
-      console.error('Error fetching fixed expenses:', error);
+      toast.error('שגיאה בטעינת ההוצאות הקבועות');
+      console.error(error);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-    e.preventDefault();
+  const handleAddExpense = async (): Promise<void> => {
     try {
+      if (!newExpense.amount || !newExpense.category || !selectedDate) {
+        toast.warning('נא למלא את כל השדות');
+        return;
+      }
+
+      const numericAmount = parseFloat(newExpense.amount);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        toast.error('נא להזין סכום חיובי');
+        return;
+      }
+
       const token = localStorage.getItem('token');
-      const expenseData = {
-        amount: Number(newExpense.amount),
-        category: newExpense.category,
-        description: `הוצאה קבועה - ${newExpense.category}`,
-        isRecurring: true,
-        recurringDetails: {
-          frequency: 'monthly' as const,
-          nextDate: new Date(selectedDate)
-        }
-      };
+      if (!token) {
+        toast.error('אנא התחבר מחדש למערכת');
+        return;
+      }
 
-      await axios.post('http://localhost:5004/api/expenses/fixed', expenseData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      await axios.post(
+        'http://localhost:5004/api/expenses/fixed',
+        {
+          amount: numericAmount,
+          category: newExpense.category,
+          description: `הוצאה קבועה - ${newExpense.category}`,
+          isRecurring: true,
+          recurringDetails: {
+            frequency: 'monthly',
+            nextDate: selectedDate
+          }
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
         }
-      });
+      );
 
-      fetchFixedExpenses();
+      toast.success('ההוצאה הקבועה נוספה בהצלחה!');
       setShowModal(false);
       setNewExpense({ amount: '', category: '' });
       setSelectedDate('');
+      fetchFixedExpenses();
     } catch (error) {
-      console.error('Error adding fixed expense:', error);
+      toast.error('שגיאה בהוספת ההוצאה הקבועה');
+      console.error(error);
     }
   };
 
-  const handleDelete = async (id: string): Promise<void> => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5004/api/expenses/fixed/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        fetchFixedExpenses();
-      } catch (error) {
-        console.error('Error deleting fixed expense:', error);
+  const handleDeleteExpense = async (expenseId: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('אנא התחבר מחדש למערכת');
+        return;
       }
+
+      await axios.delete(`http://localhost:5004/api/expenses/fixed/${expenseId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      toast.success('ההוצאה הקבועה נמחקה בהצלחה!');
+      fetchFixedExpenses();
+    } catch (error) {
+      toast.error('שגיאה במחיקת ההוצאה הקבועה');
+      console.error(error);
     }
   };
 
@@ -124,7 +154,7 @@ const FixedExpensesPage: React.FC = () => {
             </div>
             <button
               className="delete-button"
-              onClick={() => handleDelete(expense._id)}
+              onClick={() => handleDeleteExpense(expense._id)}
               aria-label="מחק הוצאה"
             >
               <FaTrash />
@@ -137,7 +167,7 @@ const FixedExpensesPage: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal">
             <h2>הוספת הוצאה קבועה</h2>
-            <form onSubmit={handleSubmit}>
+            <form>
               <div className="form-group">
                 <label>קטגוריה</label>
                 <select
@@ -176,7 +206,7 @@ const FixedExpensesPage: React.FC = () => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="submit-button">הוסף הוצאה</button>
+                <button type="button" className="submit-button" onClick={handleAddExpense}>הוסף הוצאה</button>
                 <button
                   type="button"
                   className="cancel-button"
