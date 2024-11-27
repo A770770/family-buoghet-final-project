@@ -1,251 +1,334 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
 import '../styles/DashboardPage.css';
-import { log } from 'console';
-import { RecentExpenses } from '../components/RecentExpenses';
-import { UpcomingExpenses } from '../components/UpcomingExpenses';
-import { DashboardData, ExpenseCategory } from '../types/dashboard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank, FaChild } from 'react-icons/fa';
+import { FiMenu, FiUser, FiLogOut, FiSettings, FiPieChart, FiDollarSign } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+interface DashboardData {
+    currentBalance: number;
+    totalExpenses: number;
+    expensesByCategory: Array<{
+        category: string;
+        amount: number;
+        isRecurring: boolean;
+    }>;
+    recentExpenses: Array<{
+        _id: string;
+        amount: number;
+        category: string;
+        description: string;
+        date: string;
+    }>;
+}
+
+const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9FA8DA'];
 
 const DashboardPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [userData, setUserData] = useState({
-    username: localStorage.getItem('username') || 'משתמש',
-    role: localStorage.getItem('userRole'),
-  });
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    currentBalance: 0,
-    totalExpenses: 0,
-    expensesByCategory: [],
-    recentExpenses: [],
-    upcomingExpenses: [],
-    alerts: [],
-    pendingRequests: {
-      count: 0,
-      items: []
-    }
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+    const navigate = useNavigate();
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [userInfo, setUserInfo] = useState<any>(null);
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const userId = localStorage.getItem('userId');
+                if (!token || !userId) {
+                    navigate('/login');
+                    return;
+                }
+                const response = await axios.get(`http://localhost:5004/api/auth/users/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setUserInfo(response.data);
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    localStorage.clear();
+                    navigate('/login');
+                }
+            }
+        };
 
-      if (!token || !userId) {
+        fetchUserInfo();
+    }, [navigate]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const userId = localStorage.getItem('userId');
+                if (!token || !userId) {
+                    navigate('/login');
+                    return;
+                }
+                const response = await axios.get(
+                    `http://localhost:5004/api/dashboard/getDashboardData/${userId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setData(response.data);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    localStorage.clear();
+                    navigate('/login');
+                } else {
+                    setError('שגיאה בטעינת נתוני הדשבורד');
+                }
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [navigate]);
+
+    useEffect(() => {
+        const checkNewRequests = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                
+                const response = await axios.get(
+                    `http://localhost:5004/api/parents/pending-requests`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }
+                );
+
+                const pendingRequests = response.data;
+                
+                if (pendingRequests.length > 0) {
+                    toast.info(
+                        <div>
+                            <h4>יש בקשות חדשות מהילדים שלך!</h4>
+                            <p>לחץ כאן לצפייה בבקשות</p>
+                        </div>,
+                        {
+                            onClick: () => navigate('/manage-children'),
+                            autoClose: false
+                        }
+                    );
+                }
+            } catch (error) {
+                console.error('Error checking new requests:', error);
+            }
+        };
+
+        // בדוק בקשות רק אם המשתמש הוא הורה
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'parent') {
+            checkNewRequests();
+            // בדיקה כל 5 דקות
+            const interval = setInterval(checkNewRequests, 5 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [navigate]);
+
+    const handleLogout = () => {
+        localStorage.clear();
         navigate('/login');
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError('');
-
-        const dashboardResponse = await axios.get(
-          `http://localhost:5004/api/dashboard/getDashboardData/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        setDashboardData(dashboardResponse.data);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('שגיאה בטעינת הנתונים. אנא נסה שוב.');
-      } finally {
-        setLoading(false);
-      }
     };
 
-    fetchData();
-  }, [navigate]);
+    const filteredExpenses = data?.recentExpenses.filter(expense => 
+        selectedCategory === 'all' || expense.category === selectedCategory
+    ) || [];
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      minimumFractionDigits: 0,
-    }).format(num);
-  };
-
-  const handleAddExpense = () => {
-    navigate('/add-expense');
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
-
-  const handleNavigate = (path: string) => {
-    navigate(path);
-  };
-
-  if (loading) {
-    return <div className="loading">טוען...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()}>נסה שוב</button>
-      </div>
+    const categories = Array.from(
+        new Set(data?.recentExpenses.map(expense => expense.category) || [])
     );
-  }
 
-  return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="user-welcome">
-          <h1>שלום, {userData.username}</h1>
-          <div className="user-actions">
-            <button onClick={() => navigate('/expenses/history')} className="nav-button">
-              היסטוריית הוצאות
-            </button>
-            <button onClick={() => navigate('/expenses/add')} className="nav-button">
-              הוספת הוצאה
-            </button>
-            {userData.role === 'parent' && (
-              <button 
-                onClick={() => handleNavigate('/pending-requests')}
-                className="nav-button"
-              >
-                בקשות ממתינות
-              </button>
-            )}
-            {userData.role === 'child' && (
-              <button 
-                onClick={() => handleNavigate('/request')}
-                className="nav-button"
-              >
-                בקשת כסף חדשה
-              </button>
-            )}
-            <button onClick={handleLogout} className="logout-button">
-              התנתק
-            </button>
-          </div>
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+
+    if (loading) return <div className="loading">טוען...</div>;
+    if (error) return <div className="error">{error}</div>;
+    if (!data) return <div className="error">לא נמצאו נתונים</div>;
+
+    const nonRecurringExpenses = data.expensesByCategory.filter(exp => !exp.isRecurring);
+    const recurringExpenses = data.expensesByCategory.filter(exp => exp.isRecurring);
+
+    return (
+        <div className="dashboard-container">
+            <header className="dashboard-header">
+                <div className="header-left">
+                    <div 
+                        className="user-button" 
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                    >
+                        <FaUser size={24} />
+                    </div>
+                    {showUserMenu && (
+                        <div 
+                            className="user-menu"
+                            onMouseLeave={() => setShowUserMenu(false)}
+                        >
+                            <div className="user-info">
+                                <p><strong>שם:</strong> {userInfo?.username}</p>
+                                <p><strong>אימייל:</strong> {userInfo?.email}</p>
+                                <p>{userInfo?.role === 'parent' ? 'הורה' : 'ילד'}</p>
+                            </div>
+                            <button onClick={handleLogout} className="logout-button">
+                                <FaSignOutAlt /> התנתק
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <h1>דשבורד משפחתי</h1>
+
+                <div className="header-right">
+                    <button 
+                        className="hamburger-button" 
+                        onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
+                        aria-label="תפריט"
+                    >
+                        <FaBars />
+                    </button>
+                    {showHamburgerMenu && (
+                        <div 
+                            className="hamburger-menu"
+                            onMouseLeave={() => setShowHamburgerMenu(false)}
+                        >
+                            <div className="menu-items">
+                                <Link to="/expenses/add" className="menu-item add-expense" onClick={() => setShowHamburgerMenu(false)}>
+                                    <FaPlusCircle /> הוספת הוצאה
+                                </Link>
+                                <Link to="/income/add" className="menu-item add-income" onClick={() => setShowHamburgerMenu(false)}>
+                                    <FaPiggyBank /> הוספת הכנסה
+                                </Link>
+                                <div className="menu-divider" />
+                                <Link to="/expenses/fixed" className="menu-item fixed-expenses" onClick={() => setShowHamburgerMenu(false)}>
+                                    <FaCog /> הוצאות קבועות
+                                </Link>
+                                {userInfo?.role === 'parent' && (
+                                    <>
+                                        <Link to="/requests" className="menu-item requests" onClick={() => setShowHamburgerMenu(false)}>
+                                            <FaMoneyBillWave /> בקשות ממתינות
+                                        </Link>
+                                        <Link to="/children" className="menu-item children" onClick={() => setShowHamburgerMenu(false)}>
+                                            <FaChild /> ניהול ילדים
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </header>
+
+            <div className="dashboard-stats">
+                <div className="stat-card balance">
+                    <h3>יתרה נוכחית</h3>
+                    <p className={data.currentBalance < 0 ? 'negative' : 'positive'}>
+                        ₪{data.currentBalance.toLocaleString()}
+                    </p>
+                </div>
+                <div className="stat-card expenses">
+                    <h3>סך הוצאות החודש</h3>
+                    <p>₪{data.totalExpenses.toLocaleString()}</p>
+                </div>
+            </div>
+
+            <div className="charts-container">
+                <div className="chart-section">
+                    <h3>הוצאות שוטפות</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie
+                                data={nonRecurringExpenses}
+                                dataKey="amount"
+                                nameKey="category"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                label={({ category, percent }) => 
+                                    `${category} ${(percent * 100).toFixed(0)}%`
+                                }
+                            >
+                                {nonRecurringExpenses.map((entry, index) => (
+                                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div className="chart-section">
+                    <h3>הוצאות קבועות</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie
+                                data={recurringExpenses}
+                                dataKey="amount"
+                                nameKey="category"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                label={({ category, percent }) => 
+                                    `${category} ${(percent * 100).toFixed(0)}%`
+                                }
+                            >
+                                {recurringExpenses.map((entry, index) => (
+                                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="recent-expenses-section">
+                <div className="section-header">
+                    <h3>הוצאות אחרונות</h3>
+                    <div className="category-filter">
+                        <FaSearch className="search-icon" />
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="category-select"
+                        >
+                            <option value="all">כל הקטגוריות</option>
+                            {categories.map(category => (
+                                <option key={category} value={category}>
+                                    {category}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="expenses-list">
+                    {filteredExpenses.map((expense) => (
+                        <div key={expense._id} className="expense-card">
+                            <div className="expense-details">
+                                <h4>{expense.description}</h4>
+                                <p className="category">{expense.category}</p>
+                            </div>
+                            <div className="expense-amount">
+                                ₪{expense.amount.toLocaleString()}
+                            </div>
+                            <div className="expense-date">
+                                {new Date(expense.date).toLocaleDateString('he-IL')}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
-      </header>
-
-      {dashboardData.alerts.length > 0 && (
-        <div className="alerts-section">
-          {dashboardData.alerts.map((alert, index) => (
-            <div key={index} className={`alert alert-${alert.type}`}>
-              {alert.message}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <main className="dashboard-content">
-        <section className="summary-cards">
-          <div className="card total-budget">
-            <div className="budget-header">
-              <h3>יתרה בקופה</h3>
-              <button onClick={() => navigate('/income/add')} className="add-income-button">
-                הוספת הכנסה חודשית +
-              </button>
-            </div>
-            <div className="amount">
-              {formatNumber(dashboardData.currentBalance)}
-            </div>
-            <div className="stats">
-              <div className="balance">
-                <span>יתרה בקופה</span>
-                <span>
-                  {formatNumber(dashboardData.currentBalance)}
-                </span>
-              </div>
-              <div className="expenses">
-                <span>הוצאות החודש</span>
-                <span>
-                  {formatNumber(dashboardData.totalExpenses)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="charts-grid">
-          <div className="card category-chart">
-            <h3>התפלגות הוצאות לפי קטגוריה</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={dashboardData.expensesByCategory}
-                  dataKey="amount"
-                  nameKey="category"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {dashboardData.expensesByCategory.map(
-                    (entry: ExpenseCategory, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    )
-                  )}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        <section className="recent-expenses">
-          <h3>הוצאות אחרונות</h3>
-          <div className="expenses-list">
-            {dashboardData.recentExpenses?.length > 0 && (
-              <RecentExpenses expenses={dashboardData.recentExpenses} />
-            )}
-          </div>
-        </section>
-
-        <section className="upcoming-expenses">
-          <h3>הוצאות עתידיות</h3>
-          <div className="expenses-list">
-            {dashboardData.upcomingExpenses?.length > 0 && (
-              <UpcomingExpenses expenses={dashboardData.upcomingExpenses} />
-            )}
-          </div>
-        </section>
-
-        <div className="dashboard-section pending-requests">
-          <h2>בקשות ממתינות</h2>
-          {dashboardData.pendingRequests.count > 0 ? (
-            <div className="pending-requests-summary">
-              <span className="count">{dashboardData.pendingRequests.count}</span>
-              <span className="text">בקשות ממתינות לאישור</span>
-              <button onClick={() => navigate('/requests')} className="view-all-btn">
-                צפה בכל הבקשות
-              </button>
-            </div>
-          ) : (
-            <p className="no-requests">אין בקשות ממתינות</p>
-          )}
-        </div>
-      </main>
-    </div>
-  );
+    );
 };
 
 export default DashboardPage;

@@ -11,19 +11,34 @@ const expenseSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    category: {
-        type: String,
-        required: true,
-        enum: ['מזון', 'תחבורה', 'בילויים', 'קניות', 'חינוך', 'בריאות', 'ביגוד', 'אחר', 'העברה לילד']
-    },
     description: {
+        type: String,
+        required: true
+    },
+    category: {
         type: String,
         required: true
     },
     date: {
         type: Date,
         default: Date.now
+    },
+    isRecurring: {
+        type: Boolean,
+        default: false
+    },
+    recurringDetails: {
+        frequency: {
+            type: String,
+            enum: ['monthly'],
+            required: function() { return this.isRecurring; }
+        },
+        nextDate: {
+            type: Date,
+            required: function() { return this.isRecurring; }
+        }
     }
 });
 
-module.exports = mongoose.model('Expense', expenseSchema);
+const Expense = mongoose.model('Expense', expenseSchema);
+module.exports = Expense;

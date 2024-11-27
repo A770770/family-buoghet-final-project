@@ -13,15 +13,17 @@ const AddExpensePage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!amount || !category || !description) {
-            setError('נא למלא את כל השדות');
-            return;
-        }
-
         try {
             const token = localStorage.getItem('token');
+            
             if (!token) {
+                setError('אנא התחבר מחדש למערכת');
                 navigate('/login');
+                return;
+            }
+
+            if (!amount || !category || !description) {
+                setError('נא למלא את כל השדות');
                 return;
             }
 
@@ -31,34 +33,29 @@ const AddExpensePage: React.FC = () => {
                 return;
             }
 
-            await axios.post('http://localhost:5004/api/expenses', 
+            const response = await axios.post(
+                'http://localhost:5004/api/expenses', 
                 {
                     amount: numericAmount,
                     category,
-                    description
+                    description,
+                    date: new Date()
                 },
                 {
                     headers: { 
-                        Authorization: `Bearer ${token}`,
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 }
             );
 
-            // רענון הדשבורד
-            const userId = localStorage.getItem('userId');
-            if (userId) {
-                await axios.get(
-                    `http://localhost:5004/api/dashboard/refreshDashboard/${userId}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-            }
-
+            console.log('תשובה מהשרת:', response.data);
             navigate('/dashboard');
+
         } catch (error: any) {
-            const errorMessage = error.response?.data?.error || 'שגיאה בהוספת ההוצאה';
+            console.error('שגיאה מלאה:', error);
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || 'שגיאה בהוספת ההוצאה';
             setError(errorMessage);
-            console.error('Error:', error.response?.data);
         }
     };
 

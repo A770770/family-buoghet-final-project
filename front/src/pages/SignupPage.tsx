@@ -1,6 +1,7 @@
 // src/pages/SignupPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import axiosInstance from '../api/axiosInstance';
 import { AxiosError } from 'axios';
 
@@ -29,13 +30,31 @@ const SignupPage: React.FC = () => {
     username: '',
     role: 'child' as 'parent' | 'child',
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const validateForm = () => {
+    if (!formData.email || !formData.password || !formData.username) {
+      toast.warning('נא למלא את כל השדות');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('נא להזין כתובת דוא"ל תקינה');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('הסיסמה חייבת להכיל לפחות 6 תווים');
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     if (!validateForm()) {
       setLoading(false);
@@ -43,7 +62,6 @@ const SignupPage: React.FC = () => {
     }
 
     try {
-      // קודם כל ננסה להירשם ישירות
       const response = await axiosInstance.post('/auth/signup', formData);
 
       localStorage.setItem('token', response.data.token);
@@ -51,11 +69,15 @@ const SignupPage: React.FC = () => {
       localStorage.setItem('username', response.data.user.username);
       localStorage.setItem('userRole', response.data.user.role);
 
+      toast.success('נרשמת בהצלחה!');
       navigate('/dashboard');
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.response?.data?.message || 'שגיאה בתהליך ההרשמה');
-    } finally {
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 409) {
+        toast.error('משתמש עם אימייל זה כבר קיים במערכת');
+      } else {
+        toast.error('שגיאה בהרשמה, נסה שוב מאוחר יותר');
+      }
       setLoading(false);
     }
   };
@@ -63,27 +85,11 @@ const SignupPage: React.FC = () => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
-    console.log(formData);
-  };
-
-  const validateForm = (): boolean => {
-    if (!formData.email.trim()) {
-      setError('נא להזין דוא"ל');
-      return false;
-    }
-    if (!formData.username.trim()) {
-      setError('נא להזין שם משתמש');
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError('הסיסמה חייבת להכיל לפחות 6 תווים');
-      return false;
-    }
-    return true;
   };
 
   return (
@@ -93,10 +99,10 @@ const SignupPage: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="form-group">
           <input
-            type="email"
-            name="email"
-            placeholder="דוא״ל"
-            value={formData.email}
+            type="text"
+            name="username"
+            placeholder="שם משתמש"
+            value={formData.username}
             onChange={handleInputChange}
             className="input-field"
           />
@@ -104,10 +110,10 @@ const SignupPage: React.FC = () => {
 
         <div className="form-group">
           <input
-            type="text"
-            name="username"
-            placeholder="שם משתמש"
-            value={formData.username}
+            type="email"
+            name="email"
+            placeholder="דוא״ל"
+            value={formData.email}
             onChange={handleInputChange}
             className="input-field"
           />
@@ -149,8 +155,6 @@ const SignupPage: React.FC = () => {
             יש לך כבר חשבון? התחבר
           </button>
         </div>
-
-        {error && <div className="message error">{error}</div>}
       </form>
     </div>
   );

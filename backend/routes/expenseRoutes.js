@@ -19,4 +19,9 @@ router.delete('/:id', auth, expenseController.deleteExpense);
 // קבלת סיכום הוצאות לפי קטגוריות
 router.get('/summary', auth, expenseController.getExpenseSummary);
 
+// נתיבים להוצאות קבועות
+router.get('/fixed', auth, expenseController.getFixedExpenses);
+router.post('/fixed', auth, expenseController.addExpense); // משתמש באותה פונקציה כי כבר יש תמיכה ב-isRecurring
+router.delete('/fixed/:id', auth, expenseController.deleteExpense);
+
 module.exports = router;

@@ -1,69 +1,60 @@
 const Expense = require('../models/Expense');
 const Budget = require('../models/Budget');
-const { refreshDashboardInternal } = require('./dashboardController');
+const { getDashboardData, calculateCurrentBalance } = require('./dashboardController');
 const Income = require('../models/Income');
 const mongoose = require('mongoose');
 
 // הוספת הוצאה חדשה
 exports.addExpense = async (req, res) => {
     try {
-        const { amount, category, description } = req.body;
+        const { amount, description, category, date, isRecurring, recurringDetails } = req.body;
         const userId = req.user.id;
-        const userObjectId = new mongoose.Types.ObjectId(userId);
 
-        // בישוב היתרה הזמינה
-        const totalIncome = await Income.aggregate([
-            { $match: { userId: userObjectId } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
-        ]);
-
-        const totalExpenses = await Expense.aggregate([
-            { $match: { userId: userObjectId } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
-        ]);
-
-        const availableBalance = (totalIncome[0]?.total || 0) - (totalExpenses[0]?.total || 0);
-
-        // בדיקה אם יש מספיק כסף
-        if (availableBalance < amount) {
+        if (!userId) {
             return res.status(400).json({ 
-                error: 'אין מספיק כסף בקופה',
-                availableBalance,
-                requestedAmount: amount
+                message: 'חסר מזהה משתמש',
+                error: 'userId is required' 
             });
         }
 
-        // יצירת ההוצאה
+        // יצירת הוצאה חדשה עם ObjectId
         const expense = new Expense({
-            userId: userObjectId,
+            userId: new mongoose.Types.ObjectId(userId),
             amount: Number(amount),
-            category,
             description,
-            date: new Date()
+            category,
+            date: date || new Date(),
+            isRecurring: isRecurring || false,
+            ...(isRecurring && recurringDetails ? { recurringDetails } : {})
         });
 
         await expense.save();
 
-        // חישוב היתרה המעודכנת
-        const updatedTotalExpenses = await Expense.aggregate([
-            { $match: { userId: userObjectId } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
-        ]);
-
-        const currentBalance = (totalIncome[0]?.total || 0) - (updatedTotalExpenses[0]?.total || 0);
+        // עדכון התקציב החודשי
+        try {
+            const currentBudget = await Budget.getCurrentBudget(userId);
+            if (currentBudget) {
+                await currentBudget.updateCategoryUsage(category, Number(amount));
+            }
+        } catch (budgetError) {
+            console.error('שגיאה בעדכון התקציב:', budgetError);
+            // ממשיכים גם אם יש שגיאה בעדכון התקציב
+        }
 
         res.status(201).json({
             message: 'ההוצאה נוספה בהצלחה',
-            expense,
-            currentBalance,
-            availableBalance: currentBalance // מחזיר את היתרה המעודכנת
+            expense
         });
 
     } catch (error) {
         console.error('שגיאה בהוספת הוצאה:', error);
-        res.status(500).json({ error: 'שגיאה בהוספת ההוצאה' });
+        res.status(500).json({ 
+            message: 'שגיאה בהוספת ההוצאה',
+            error: error.message 
+        });
     }
 };
+
 // קבלת כל ההוצאות של משתמש
 exports.getExpenses = async (req, res) => {
     try {
@@ -218,6 +209,33 @@ exports.getExpenseHistory = async (req, res) => {
         res.status(500).json({ message: 'שגיאה בקבלת היסטוריית ההוצאות', error: error.message });
     }
 };
+
+// קבלת הוצאות קבועות
+exports.getFixedExpenses = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const expenses = await Expense.find({ 
+            userId: new mongoose.Types.ObjectId(userId),
+            isRecurring: true 
+        }).lean();
+
+        // מוסיף ברירת מחדל ל-recurringDetails אם חסר
+        const processedExpenses = expenses.map(expense => ({
+            ...expense,
+            recurringDetails: expense.recurringDetails || {
+                frequency: 'monthly',
+                nextDate: expense.date || new Date()
+            }
+        }));
+        
+        res.json(processedExpenses);
+    } catch (error) {
+        console.error('שגיאה בקבלת הוצאות קבועות:', error);
+        res.status(500).json({ 
+            message: 'שגיאה בקבלת הוצאות קבועות',
+            error: error.message 
+        });
+    }
+};
+
 module.exports = exports;
-
-

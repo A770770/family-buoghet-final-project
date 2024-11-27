@@ -1,440 +1,354 @@
-/* DashboardPage.css
+/* src/styles/DashboardPage.css */
 .dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #f8f9fa;
     min-height: 100vh;
-    background-color: #f0f4f8;
-    padding: 20px;
 }
 
 .dashboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
 }
 
-.user-welcome {
+.header-left {
     display: flex;
     align-items: center;
-    gap: 15px;
+    position: relative;
 }
 
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
+.header-right {
+    position: relative;
+}
+
+.hamburger-button {
+    background: none;
+    border: none;
     cursor: pointer;
-}
-
-.user-avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #1976d2;
-    color: white;
+    padding: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-    cursor: pointer;
+    color: #3498db;
+    transition: color 0.3s ease;
 }
 
-.back-button {
-    padding: 8px 16px;
-    background-color: transparent;
-    border: 2px solid #1976d2;
-    color: #1976d2;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+.hamburger-button:hover {
+    color: #2980b9;
 }
 
-.back-button:hover {
-    background-color: #1976d2;
-    color: white;
-}
-
-.dashboard-content {
-    display: grid;
-    grid-gap: 20px;
-}
-
-.budget-section,
-.summary-section,
-.recent-expenses-section {
-    background-color: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.budget-overview {
-    display: flex;
-    justify-content: space-around;
-    padding: 20px 0;
-}
-
-.budget-balance, .budget-monthly {
-    text-align: center;
-}
-
-.balance-amount, .monthly-amount {
-    display: block;
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #1976d2;
-}
-
-.balance-label, .monthly-label {
-    display: block;
-    color: #666;
-    margin-top: 5px;
-}
-
-.summary-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.summary-card {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.card-value {
+.hamburger-button svg {
     font-size: 1.5rem;
-    font-weight: bold;
-    color: #1976d2;
-    margin-top: 10px;
 }
 
-.expenses-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.expense-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.expense-details {
-    display: flex;
-    flex-direction: column;
-}
-
-.expense-title {
-    font-weight: bold;
-}
-
-.expense-category {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.expense-amount {
-    font-weight: bold;
-    color: #1976d2;
-}
-
-.quick-actions {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-.add-expense-floating-button {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background-color: #1976d2;
-    color: white;
-    font-size: 24px;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-}
-
-.add-expense-floating-button:hover {
-    transform: scale(1.1);
-}
-
-.options-menu {
+.hamburger-menu {
     position: absolute;
-    bottom: 70px;
+    top: calc(100% + 10px);
     right: 0;
     background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 200px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 250px;
+    z-index: 1000;
+    padding: 0.75rem;
+    animation: slideIn 0.3s ease;
 }
 
-.options-menu button {
-    padding: 10px;
-    background: none;
-    border: none;
-    text-align: right;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    border-radius: 4px;
-}
-
-.options-menu button:hover {
-    background-color: #f0f4f8;
-}
-
-@media (max-width: 768px) {
-    .budget-overview {
-        flex-direction: column;
-        gap: 20px;
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
     }
-
-    .summary-section {
-        grid-template-columns: 1fr;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
-
-    .balance-amount, .monthly-amount {
-        font-size: 2rem;
-    }
-} */
-
-
-
-
-/* src/styles/DashboardPage.css */
-.dashboard-container {
-    min-height: 100vh;
-    background-color: #f8fafc;
-    padding: 2rem;
 }
 
-.dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-}
-
-.user-welcome h1 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-}
-
-.current-date {
-    color: #64748b;
-    margin-top: 0.5rem;
-}
-
-.primary-button {
-    background-color: #3b82f6;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.primary-button:hover {
-    background-color: #2563eb;
-}
-
-.summary-cards {
-    display: grid;
-    grid-gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.card {
-    background: white;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.total-budget h3 {
-    color: #64748b;
-    font-size: 1rem;
-    margin: 0 0 0.5rem;
-}
-
-.total-budget .amount {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 1rem;
-}
-
-.stats {
-    display: flex;
-    justify-content: space-between;
-    gap: 2rem;
-}
-
-.stats>div {
+.menu-items {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
-.stats span:first-child {
-    color: #64748b;
-    font-size: 0.875rem;
-}
-
-.positive {
-    color: #10b981;
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #2c3e50;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
     font-weight: 500;
 }
 
-.negative {
-    color: #ef4444;
-    font-weight: 500;
+.menu-item svg {
+    font-size: 1.25rem;
 }
 
-.charts-grid {
+.menu-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(-5px);
+}
+
+.menu-item.add-expense svg {
+    color: #2ecc71;
+}
+
+.menu-item.add-income svg {
+    color: #3498db;
+}
+
+.menu-item.fixed-expenses svg {
+    color: #e74c3c;
+}
+
+.menu-item.requests svg {
+    color: #f1c40f;
+}
+
+.menu-item.children svg {
+    color: #9b59b6;
+}
+
+.menu-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 0.5rem 0;
+}
+
+.user-button {
+    background: none;
+    border: none;
+    color: #2c3e50;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.user-button:hover {
+    background-color: #e9ecef;
+}
+
+.user-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    min-width: 250px;
+    z-index: 1000;
+}
+
+.user-info {
+    margin-bottom: 1rem;
+}
+
+.user-info p {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+
+.user-info strong {
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.dashboard-header h1 {
+    color: #2c3e50;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.dashboard-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
-.chart-container {
-    height: 300px;
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card h3 {
+    color: #6c757d;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+}
+
+.stat-card p {
+    font-size: 1.8rem;
+    margin: 0;
+    font-weight: bold;
+}
+
+.stat-card.balance p.positive {
+    color: #28a745;
+}
+
+.stat-card.balance p.negative {
+    color: #dc3545;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chart-section h3 {
+    color: #2c3e50;
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+}
+
+.recent-expenses-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-icon {
+    color: #6c757d;
+}
+
+.category-select {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    color: #495057;
+    background-color: white;
 }
 
 .expenses-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 1rem;
 }
 
-.expense-item {
+.expense-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    transition: transform 0.2s;
 }
 
-.expense-item:last-child {
-    border-bottom: none;
+.expense-card:hover {
+    transform: translateX(-5px);
 }
 
-.expense-info {
+.expense-details h4 {
+    margin: 0 0 0.25rem 0;
+    color: #2c3e50;
+}
+
+.expense-details .category {
+    color: #6c757d;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.expense-amount {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.expense-date {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.action-buttons {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    gap: 1rem;
+    justify-content: center;
 }
 
-.expense-info .title {
-    font-weight: 500;
-    color: #1e293b;
+.add-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-.expense-info .category {
-    color: #64748b;
-    font-size: 0.875rem;
+.add-button:hover {
+    background-color: #45a049;
 }
 
-.expense-item .amount {
-    font-weight: 500;
-    color: #1e293b;
-}
-
+/* Responsive Design */
 @media (max-width: 768px) {
     .dashboard-container {
         padding: 1rem;
     }
 
-    .dashboard-header {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .charts-grid {
+    .charts-container {
         grid-template-columns: 1fr;
     }
-}
 
-.loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    gap: 1rem;
-}
+    .expense-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
 
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #e2e8f0;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+    .action-buttons {
+        flex-direction: column;
     }
 }
 
-.nav-button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 5px;
-    font-size: 16px;
-    transition: background-color 0.3s;
-}
-
-.nav-button:hover {
-    background-color: #45a049;
-}
-
-.nav-button:active {
-    background-color: #3d8b40;
-}
-
-.budget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.add-income-button {
-    padding: 6px 12px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.add-income-button:hover {
-    background-color: #218838;
+/* Loading and Error States */
+.loading, .error {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+    font-size: 1.2rem;
 }

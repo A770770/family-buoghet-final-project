@@ -1,6 +1,7 @@
 export interface ExpenseCategory {
     category: string;
     amount: number;
+    isRecurring: boolean;
 }
 
 export interface Expense {
@@ -9,6 +10,11 @@ export interface Expense {
     amount: number;
     category: string;
     date: string;
+    isRecurring?: boolean;
+    recurringDetails?: {
+        frequency: 'monthly';
+        nextDate: Date;
+    };
 }
 
 export interface Alert {
@@ -16,12 +22,15 @@ export interface Alert {
     type: 'warning' | 'error' | 'info';
 }
 
-export interface Request {
+export interface PendingRequest {
     id: string;
     title: string;
     amount: number;
     category: string;
     date: string;
+    status: 'pending' | 'approved' | 'rejected';
+    childId: string;
+    childName: string;
 }
 
 export interface DashboardData {
@@ -33,6 +42,6 @@ export interface DashboardData {
     alerts: Alert[];
     pendingRequests: {
         count: number;
-        items: Request[];
+        items: PendingRequest[];
     };
-} 
+}

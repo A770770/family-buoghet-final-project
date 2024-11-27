@@ -38,15 +38,28 @@ const UserManagementPage: React.FC = () => {
 
     const fetchUserData = async () => {
         try {
-            const response = await axios.get('http://localhost:5004/api/users/current', {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                setMessage('לא נמצא מזהה משתמש');
+                return;
+            }
+
+            const response = await axios.get(`http://localhost:5004/api/auth/users/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
             setUserRole(response.data.role);
+            setCurrentUser(response.data);
         } catch (error) {
             console.error('Error fetching user data:', error);
-            setMessage('שגיאה בטעינת נתוני משתמש');
+            if (axios.isAxiosError(error) && error.response?.status === 401) {
+                // אם יש שגיאת אימות, נחזיר למסך ההתחברות
+                localStorage.clear();
+                navigate('/login');
+            } else {
+                setMessage('שגיאה בטעינת נתוני משתמש');
+            }
         }
     };
 
