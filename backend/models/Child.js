@@ -51,62 +51,49 @@ const childSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    monthlyBudget: {
-        type: Number,
-        required: true
-    },
-    remainingBudget: {
-        type: Number,
-        required: true
-    },
     password: {
         type: String,
-        required: true,
-        select: false // לא יוחזר בשאילתות רגילות
+        required: true
     },
     parent: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    expenses: [expenseSchema],
+    monthlyAllowance: {
+        type: Number,
+        default: 0
+    },
+    remainingBudget: {
+        type: Number,
+        default: 0
+    },
     requests: [requestSchema],
-    lastNotificationCheck: {
-        type: Date,
-        default: Date.now
-    }
-}, {
-    timestamps: true
+    expenses: [expenseSchema]
 });
 
-// וירטואלי: האם יש בקשות חדשות
-childSchema.virtual('hasNewRequests').get(function() {
-    if (!this.requests || !this.lastNotificationCheck) return false;
-    return this.requests.some(req => 
-        req.status === 'pending' && 
-        req.createdAt > this.lastNotificationCheck
-    );
-});
-
-// מתודה: עדכון תקציב חודשי
-childSchema.methods.updateMonthlyBudget = async function(newBudget) {
-    const budgetDiff = newBudget - this.monthlyBudget;
-    this.monthlyBudget = newBudget;
-    this.remainingBudget += budgetDiff;
-    await this.save();
+// מתודות סטטיות
+childSchema.statics.generatePassword = function() {
+    return Math.random().toString(36).slice(-8);
 };
 
-// מתודה: הוספת בקשה חדשה
-childSchema.methods.addRequest = async function(requestData) {
+// מתודות של המסמך
+childSchema.methods.updateMonthlyBudget = function(amount) {
+    this.monthlyAllowance = (this.monthlyAllowance || 0) + Number(amount);
+    this.remainingBudget = (this.remainingBudget || 0) + Number(amount);
+    return this.save();
+};
+
+childSchema.methods.addRequest = function(requestData) {
     this.requests.push(requestData);
-    await this.save();
-    return this.requests[this.requests.length - 1];
+    return this.save();
 };
 
-// מתודה: עדכון סטטוס בקשה
-childSchema.methods.updateRequestStatus = async function(requestId, status, message) {
+childSchema.methods.updateRequestStatus = function(requestId, status, message) {
     const request = this.requests.id(requestId);
-    if (!request) throw new Error('הבקשה לא נמצאה');
+    if (!request) {
+        throw new Error('הבקשה לא נמצאה');
+    }
     
     request.status = status;
     request.responseMessage = message;
@@ -114,10 +101,14 @@ childSchema.methods.updateRequestStatus = async function(requestId, status, mess
     
     if (status === 'approved') {
         this.remainingBudget -= request.amount;
+        this.expenses.push({
+            amount: request.amount,
+            category: request.category,
+            description: request.description
+        });
     }
     
-    await this.save();
-    return request;
+    return this.save();
 };
 
 module.exports = mongoose.model('Child', childSchema);

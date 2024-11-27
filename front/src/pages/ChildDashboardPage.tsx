@@ -1,143 +1,261 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { FaMoneyBillWave, FaPiggyBank, FaHistory, FaPlusCircle, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaComment, FaFileAlt } from 'react-icons/fa';
+import 'react-toastify/dist/ReactToastify.css';
 import '../styles/ChildDashboardPage.css';
-import { FaMoneyBillWave, FaPiggyBank, FaHistory, FaPlusCircle } from 'react-icons/fa';
 
 interface Request {
-    _id: string;
+    id: string;
     amount: number;
-    category: string;
     description: string;
     status: 'pending' | 'approved' | 'rejected';
-    responseMessage?: string;
     createdAt: string;
-    respondedAt?: string;
+    responseMessage?: string;
+    category: string;
 }
 
-const ChildDashboardPage: React.FC = () => {
-    const [monthlyBudget, setMonthlyBudget] = useState<number>(0);
-    const [remainingBudget, setRemainingBudget] = useState<number>(0);
-    const [requests, setRequests] = useState<Request[]>([]);
-    const [showRequestModal, setShowRequestModal] = useState(false);
-    const [newRequest, setNewRequest] = useState({
-        amount: '',
-        category: '',
-        description: ''
-    });
+interface ChildData {
+    name: string;
+    monthlyAllowance: number;
+    remainingBudget: number;
+    requests: Request[];
+}
 
-    const categories = [
-        'משחקים',
-        'בגדים',
-        'ממתקים',
-        'צעצועים',
-        'ספרים',
-        'בילויים',
-        'אחר'
-    ];
+const API_URL = 'http://localhost:5004';
+
+const savingTips = [
+    'שים לב לכמה כסף אתה מוציא על ממתקים - אולי כדאי לחסוך קצת?',
+    'נסה לחסוך 10% מדמי הכיס שלך כל חודש',
+    'לפני שאתה קונה משהו, חכה יום אחד וחשוב אם אתה באמת צריך את זה',
+    'השווה מחירים לפני שאתה קונה',
+    'נסה להרוויח כסף נוסף בעזרת עבודות קטנות בבית'
+];
+
+const categories = ['משחקים', 'בגדים', 'ממתקים', 'צעצועים', 'ספרים', 'בילויים', 'אחר'];
+
+const ChildDashboardPage: React.FC = () => {
+    const navigate = useNavigate();
+    const [childData, setChildData] = useState<ChildData | null>(null);
+    const [requestAmount, setRequestAmount] = useState('');
+    const [requestDescription, setRequestDescription] = useState('');
+    const [requestCategory, setRequestCategory] = useState(categories[0]);
+    const [loading, setLoading] = useState(false);
+    const [currentTip, setCurrentTip] = useState('');
+    const [showRequestModal, setShowRequestModal] = useState(false);
 
     useEffect(() => {
-        fetchChildData();
+        setCurrentTip(savingTips[Math.floor(Math.random() * savingTips.length)]);
     }, []);
 
-    const fetchChildData = async () => {
+    useEffect(() => {
+        const token = localStorage.getItem('childToken');
+        const childId = localStorage.getItem('childId');
+
+        if (!token || !childId) {
+            navigate('/login');
+            return;
+        }
+
+        fetchChildData(childId, token);
+    }, [navigate]);
+
+    const fetchChildData = async (childId: string, token: string) => {
         try {
-            const childId = localStorage.getItem('userId');
-            const response = await axios.get(`/api/children/${childId}/data`);
-            setMonthlyBudget(response.data.monthlyBudget);
-            setRemainingBudget(response.data.remainingBudget);
-            setRequests(response.data.requests);
+            const response = await axios.get(`${API_URL}/api/children/${childId}/data`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setChildData(response.data);
         } catch (error) {
             console.error('Error fetching child data:', error);
             toast.error('שגיאה בטעינת הנתונים');
+            if (axios.isAxiosError(error) && error.response?.status === 401) {
+                localStorage.removeItem('childToken');
+                localStorage.removeItem('childId');
+                navigate('/login');
+            }
         }
     };
 
-    const handleRequestSubmit = async (e: React.FormEvent) => {
+    const handleSubmitRequest = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!requestAmount || !requestDescription || !requestCategory) {
+            toast.error('נא למלא את כל השדות');
+            return;
+        }
+
+        const childId = localStorage.getItem('childId');
+        const token = localStorage.getItem('childToken');
+
+        if (!childId || !token) {
+            navigate('/login');
+            return;
+        }
+
+        setLoading(true);
         try {
-            const childId = localStorage.getItem('userId');
-            await axios.post(`/api/children/${childId}/requests`, {
-                amount: parseFloat(newRequest.amount),
-                category: newRequest.category,
-                description: newRequest.description
+            const response = await axios.post(`${API_URL}/api/children/${childId}/requests`, {
+                amount: parseFloat(requestAmount),
+                description: requestDescription,
+                category: requestCategory,
+                childId: childId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
-            setShowRequestModal(false);
-            setNewRequest({ amount: '', category: '', description: '' });
             toast.success('הבקשה נשלחה בהצלחה');
-            fetchChildData();
+            setRequestAmount('');
+            setRequestDescription('');
+            setShowRequestModal(false);
+            
+            // רענון הנתונים אחרי שליחת הבקשה
+            fetchChildData(childId, token);
         } catch (error) {
             console.error('Error submitting request:', error);
-            toast.error('שגיאה בשליחת הבקשה');
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || 'שגיאה בשליחת הבקשה');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusIcon = (status: string) => {
         switch (status) {
-            case 'approved': return 'var(--success-color)';
-            case 'rejected': return 'var(--error-color)';
-            default: return 'var(--warning-color)';
+            case 'approved':
+                return <FaCheckCircle className="status-icon approved" />;
+            case 'rejected':
+                return <FaTimesCircle className="status-icon rejected" />;
+            default:
+                return <FaHourglassHalf className="status-icon pending" />;
         }
     };
 
     const getStatusText = (status: string) => {
         switch (status) {
-            case 'approved': return 'אושר';
-            case 'rejected': return 'נדחה';
-            default: return 'ממתין';
+            case 'approved':
+                return 'אושר';
+            case 'rejected':
+                return 'נדחה';
+            default:
+                return 'ממתין לאישור';
         }
     };
 
+    if (!childData) {
+        return <div className="loading">טוען...</div>;
+    }
+
     return (
-        <div className="child-dashboard">
-            <div className="dashboard-header">
-                <h1>שלום!</h1>
-                <button className="new-request-button" onClick={() => setShowRequestModal(true)}>
-                    <FaPlusCircle /> בקשה חדשה
-                </button>
+        <div className="child-dashboard-container">
+            <div className="dashboard-hero">
+                <div className="hero-content">
+                    <h1>שלום {childData.name}! 👋</h1>
+                    <div className="daily-tip">
+                        <div className="tip-bubble">
+                            <FaPiggyBank className="tip-icon" />
+                            <p>{currentTip}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="budget-cards">
-                <div className="budget-card">
-                    <FaMoneyBillWave className="card-icon" />
-                    <div className="card-content">
+            <div className="stats-container">
+                <div className="stat-card monthly-budget">
+                    <div className="stat-icon">
+                        <FaMoneyBillWave />
+                    </div>
+                    <div className="stat-info">
                         <h3>תקציב חודשי</h3>
-                        <p>₪{monthlyBudget}</p>
+                        <p className="stat-value">₪{childData.monthlyAllowance.toLocaleString()}</p>
+                        <div className="stat-progress">
+                            <div 
+                                className="progress-bar" 
+                                style={{ 
+                                    width: `${Math.min(100, (childData.remainingBudget / childData.monthlyAllowance) * 100)}%` 
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
-                <div className="budget-card">
-                    <FaPiggyBank className="card-icon" />
-                    <div className="card-content">
+
+                <div className="stat-card remaining-budget">
+                    <div className="stat-icon">
+                        <FaPiggyBank />
+                    </div>
+                    <div className="stat-info">
                         <h3>נשאר בתקציב</h3>
-                        <p>₪{remainingBudget}</p>
+                        <p className="stat-value">₪{childData.remainingBudget.toLocaleString()}</p>
+                        <p className="stat-subtitle">
+                            {childData.remainingBudget > 0 ? 
+                                '🌟 מצוין! אתה חוסך יפה' : 
+                                '💡 אולי כדאי לחסוך קצת?'}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div className="requests-section">
-                <h2><FaHistory /> הבקשות שלי</h2>
-                <div className="requests-list">
-                    {requests.map(request => (
-                        <div key={request._id} className="request-card">
+            <div className="recent-activity">
+                <div className="section-title">
+                    <FaHistory className="section-icon" />
+                    <h2>הבקשות האחרונות שלי</h2>
+                    <button 
+                        className="new-request-btn"
+                        onClick={() => setShowRequestModal(true)}
+                    >
+                        <FaPlusCircle /> בקשה חדשה
+                    </button>
+                </div>
+
+                <div className="activity-cards">
+                    {childData?.requests?.map((request) => (
+                        <div key={request.id} className={`activity-card ${request.status}`}>
                             <div className="request-header">
-                                <span className="request-category">{request.category}</span>
+                                {request.status === 'pending' && (
+                                    <div className="status-badge pending">
+                                        <FaHourglassHalf /> ממתין לאישור
+                                    </div>
+                                )}
+                                {request.status === 'approved' && (
+                                    <div className="status-badge approved">
+                                        <FaCheckCircle /> אושר
+                                    </div>
+                                )}
+                                {request.status === 'rejected' && (
+                                    <div className="status-badge rejected">
+                                        <FaTimesCircle /> נדחה
+                                    </div>
+                                )}
                                 <span className="request-date">
                                     {new Date(request.createdAt).toLocaleDateString('he-IL')}
                                 </span>
                             </div>
-                            <p className="request-description">{request.description}</p>
-                            <p className="request-amount">₪{request.amount}</p>
-                            <div className="request-status" style={{ color: getStatusColor(request.status) }}>
-                                {getStatusText(request.status)}
+                            <div className="request-amount">₪{request.amount.toLocaleString()}</div>
+                            <div className="request-category">
+                                <span className="category-tag">{request.category}</span>
                             </div>
+                            <p className="request-description">{request.description}</p>
                             {request.responseMessage && (
-                                <p className="response-message">
-                                    הודעה מההורה: {request.responseMessage}
-                                </p>
+                                <div className="response-message">
+                                    <FaComment className="message-icon" />
+                                    {request.responseMessage}
+                                </div>
                             )}
                         </div>
                     ))}
+                    {(!childData?.requests || childData.requests.length === 0) && (
+                        <div className="empty-state">
+                            <FaFileAlt className="empty-icon" />
+                            <p>עדיין אין לך בקשות</p>
+                            <button 
+                                className="create-first-btn"
+                                onClick={() => setShowRequestModal(true)}
+                            >
+                                צור בקשה ראשונה
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -145,53 +263,42 @@ const ChildDashboardPage: React.FC = () => {
                 <div className="modal">
                     <div className="modal-content">
                         <h2>בקשה חדשה</h2>
-                        <form onSubmit={handleRequestSubmit}>
+                        <form onSubmit={handleSubmitRequest}>
                             <div className="form-group">
-                                <label>סכום</label>
+                                <label>סכום (₪)</label>
                                 <input
                                     type="number"
-                                    value={newRequest.amount}
-                                    onChange={(e) => setNewRequest({
-                                        ...newRequest,
-                                        amount: e.target.value
-                                    })}
+                                    value={requestAmount}
+                                    onChange={(e) => setRequestAmount(e.target.value)}
+                                    min="0"
                                     required
                                 />
                             </div>
                             <div className="form-group">
                                 <label>קטגוריה</label>
                                 <select
-                                    value={newRequest.category}
-                                    onChange={(e) => setNewRequest({
-                                        ...newRequest,
-                                        category: e.target.value
-                                    })}
+                                    value={requestCategory}
+                                    onChange={(e) => setRequestCategory(e.target.value)}
                                     required
                                 >
-                                    <option value="">בחר קטגוריה</option>
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
+                                    {categories.map(category => (
+                                        <option key={category} value={category}>{category}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="form-group">
                                 <label>תיאור</label>
                                 <textarea
-                                    value={newRequest.description}
-                                    onChange={(e) => setNewRequest({
-                                        ...newRequest,
-                                        description: e.target.value
-                                    })}
+                                    value={requestDescription}
+                                    onChange={(e) => setRequestDescription(e.target.value)}
                                     required
                                 />
                             </div>
                             <div className="modal-buttons">
-                                <button type="submit">שלח בקשה</button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => setShowRequestModal(false)}
-                                    className="cancel-button"
-                                >
+                                <button type="submit" disabled={loading}>
+                                    {loading ? 'שולח...' : 'שלח בקשה'}
+                                </button>
+                                <button type="button" onClick={() => setShowRequestModal(false)}>
                                     ביטול
                                 </button>
                             </div>

@@ -5,15 +5,26 @@ import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaChild, FaUserTie } from 'react-icons/fa';
 import '../styles/LoginPage.css';
 
-interface LoginResponse {
+interface ParentLoginResponse {
     token: string;
     user: {
         id: string;
         username: string;
-        role: 'parent' | 'child';
-        parentId?: string;
+        role: 'parent';
     };
 }
+
+interface ChildLoginResponse {
+    token: string;
+    child: {
+        id: string;
+        name: string;
+        monthlyAllowance: number;
+        remainingBudget: number;
+    };
+}
+
+const API_URL = 'http://localhost:5004';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -47,42 +58,41 @@ const LoginPage: React.FC = () => {
         try {
             setIsLoading(true);
             
-            const endpoint = isParentMode
-                ? 'http://localhost:5004/api/auth/login'
-                : 'http://localhost:5004/api/children/login';
-
-            const loginData = isParentMode
-                ? {
+            if (isParentMode) {
+                // התחברות הורה
+                const response = await axios.post<ParentLoginResponse>(`${API_URL}/api/auth/login`, {
                     email: formData.email,
-                    password: formData.password,
-                    role: 'parent'
-                }
-                : {
                     password: formData.password
-                };
+                });
 
-            const response = await axios.post<LoginResponse>(endpoint, loginData);
-
-            if (response.data?.token && response.data?.user) {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('userId', response.data.user.id);
                 localStorage.setItem('username', response.data.user.username);
-                localStorage.setItem('role', response.data.user.role);
-                
-                if (response.data.user.parentId) {
-                    localStorage.setItem('parentId', response.data.user.parentId);
-                }
-                
-                const targetPath = response.data.user.role === 'parent' 
-                    ? '/dashboard' 
-                    : '/child-dashboard';
-                
-                navigate(targetPath, { replace: true });
+                localStorage.setItem('role', 'parent');
+
+                navigate('/dashboard');
+                toast.success('התחברת בהצלחה!');
+            } else {
+                // התחברות ילד
+                const response = await axios.post<ChildLoginResponse>(`${API_URL}/api/children/login`, {
+                    password: formData.password
+                });
+
+                const { token, child } = response.data;
+
+                localStorage.setItem('childToken', token);
+                localStorage.setItem('childId', child.id);
+                localStorage.setItem('childName', child.name);
+                localStorage.setItem('role', 'child');
+
+                navigate('/child-dashboard');
                 toast.success('התחברת בהצלחה!');
             }
         } catch (error: any) {
             console.error('Login error:', error);
-            const errorMessage = error.response?.data?.message || 'שגיאה בהתחברות';
+            const errorMessage = isParentMode
+                ? 'שם משתמש או סיסמה שגויים'
+                : 'סיסמה שגויה';
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);

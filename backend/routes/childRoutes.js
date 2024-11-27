@@ -7,48 +7,293 @@ const auth = require('../middleware/auth');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const childAuth = require('../middleware/childAuth');
 
-// יצירת ילד חדש
+// הוספת ילד חדש
 router.post('/', auth, async (req, res) => {
     try {
-        const { name, monthlyBudget } = req.body;
-        
-        // יצירת סיסמה רנדומלית בת 6 תווים
-        const password = crypto.randomBytes(3).toString('hex');
+        const { name } = req.body;
+        if (!name) {
+            return res.status(400).json({ message: 'נא להזין שם' });
+        }
+
+        // יצירת סיסמה רנדומלית
+        const password = Child.generatePassword();
         
         const child = new Child({
             name,
-            monthlyBudget,
-            remainingBudget: monthlyBudget,
             password,
             parent: req.user.id,
-            requests: []
+            monthlyAllowance: 0,
+            remainingBudget: 0
         });
 
         await child.save();
-
+        
         // הוספת הילד למערך הילדים של ההורה
         await User.findByIdAndUpdate(req.user.id, {
             $push: { children: child._id }
         });
 
-        res.status(201).json({ child, password });
+        res.status(201).json({
+            message: 'הילד נוסף בהצלחה',
+            child: {
+                _id: child._id,
+                name: child.name,
+                monthlyAllowance: child.monthlyAllowance,
+                remainingBudget: child.remainingBudget
+            }
+        });
     } catch (error) {
+        console.error('Error in create child:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// קבלת כל הילדים של ההורה כולל הבקשות שלהם
+// קבלת כל הילדים של ההורה
 router.get('/', auth, async (req, res) => {
     try {
-        const children = await Child.find({ parent: req.user.id })
-            .populate({
-                path: 'requests',
-                match: { status: 'pending' }
-            });
+        const children = await Child.find({ parent: req.user.id });
         res.json(children);
     } catch (error) {
+        console.error('Error in get children:', error);
         res.status(500).json({ message: error.message });
+    }
+});
+
+// קבלת ילד ספציפי
+router.get('/:childId', auth, async (req, res) => {
+    try {
+        const child = await Child.findById(req.params.childId);
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
+        }
+
+        if (child.parent.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'אין הרשאה לצפות בילד זה' });
+        }
+
+        res.json(child);
+    } catch (error) {
+        console.error('Error in get child:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// קבלת סיסמת ילד
+router.get('/:childId/password', auth, async (req, res) => {
+    try {
+        const child = await Child.findById(req.params.childId);
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
+        }
+
+        if (child.parent.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'אין הרשאה לצפות בסיסמה' });
+        }
+
+        res.json({ password: child.password });
+    } catch (error) {
+        console.error('Error in get child password:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// מחיקת ילד
+router.delete('/:childId', auth, async (req, res) => {
+    try {
+        const child = await Child.findById(req.params.childId);
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
+        }
+
+        if (child.parent.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'אין הרשאה למחוק ילד זה' });
+        }
+
+        // מחיקת כל הבקשות של הילד
+        await Request.deleteMany({ childId: child._id });
+
+        // הסרת הילד מרשימת הילדים של ההורה
+        await User.findByIdAndUpdate(req.user.id, {
+            $pull: { children: child._id }
+        });
+
+        // מחיקת הילד
+        await Child.deleteOne({ _id: child._id });
+
+        res.json({ message: 'הילד נמחק בהצלחה' });
+    } catch (error) {
+        console.error('Error in delete child:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// הוספת תקציב לילד
+router.post('/:childId/add-budget', auth, async (req, res) => {
+    try {
+        const { amount } = req.body;
+        const { childId } = req.params;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ message: 'יש להזין סכום חיובי' });
+        }
+
+        const child = await Child.findOne({ _id: childId, parent: req.user.id });
+        
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
+        }
+
+        // עדכון התקציב
+        child.monthlyAllowance += amount;
+        child.remainingBudget += amount;
+        
+        await child.save();
+
+        res.json({
+            message: 'התקציב עודכן בהצלחה',
+            newBudget: child.monthlyAllowance,
+            remainingBudget: child.remainingBudget
+        });
+    } catch (error) {
+        console.error('Error in POST /children/:childId/add-budget:', error);
+        res.status(500).json({ message: 'שגיאה בעדכון התקציב' });
+    }
+});
+
+// התחברות ילד
+router.post('/login', async (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ message: 'נא להזין סיסמה' });
+        }
+
+        // מציאת הילד לפי הסיסמה
+        const child = await Child.findOne({ password });
+        
+        if (!child) {
+            return res.status(401).json({ message: 'סיסמה שגויה' });
+        }
+
+        // יצירת טוקן
+        const token = jwt.sign(
+            { id: child._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // החזרת פרטי הילד והטוקן
+        res.json({
+            token,
+            child: {
+                id: child._id,
+                name: child.name,
+                monthlyAllowance: child.monthlyAllowance,
+                remainingBudget: child.remainingBudget
+            }
+        });
+    } catch (error) {
+        console.error('Error in child login:', error);
+        res.status(500).json({ message: 'שגיאה בהתחברות' });
+    }
+});
+
+// קבלת נתוני ילד
+router.get('/:id/data', childAuth, async (req, res) => {
+    try {
+        const childId = req.params.id;
+        
+        const child = await Child.findById(childId)
+            .populate({
+                path: 'requests',
+                options: { sort: { 'createdAt': -1 } }
+            })
+            .select('-password');
+
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
+        }
+
+        const requests = child.requests || [];
+
+        res.json({
+            name: child.name,
+            monthlyAllowance: child.monthlyAllowance,
+            remainingBudget: child.remainingBudget,
+            expenses: child.expenses || [],
+            requests: requests.map(req => ({
+                id: req._id,
+                amount: req.amount,
+                description: req.description,
+                status: req.status,
+                createdAt: req.createdAt,
+                responseMessage: req.responseMessage
+            }))
+        });
+    } catch (error) {
+        console.error('Error in GET /children/:childId/data:', error);
+        res.status(500).json({ message: 'שגיאת שרת', error: error.message });
+    }
+});
+
+// שליחת בקשה חדשה
+router.post('/:childId/requests', childAuth, async (req, res) => {
+    try {
+        const { amount, description, category } = req.body;
+        const childId = req.params.childId;
+
+        // בדיקת תקינות הנתונים
+        if (!amount || !description || !category) {
+            return res.status(400).json({ message: 'נא למלא את כל השדות' });
+        }
+
+        // מציאת הילד
+        const child = await Child.findById(childId);
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
+        }
+
+        // יצירת בקשה חדשה
+        const request = new Request({
+            childId: childId,
+            amount: parseFloat(amount),
+            description,
+            category,
+            status: 'pending',
+            createdAt: new Date()
+        });
+
+        // שמירת הבקשה
+        await request.save();
+        
+        // הוספת הבקשה לרשימת הבקשות של הילד
+        if (!child.requests) {
+            child.requests = [];
+        }
+        child.requests.push(request._id);
+        await child.save();
+
+        // החזרת תשובה
+        res.status(201).json({
+            message: 'הבקשה נשלחה בהצלחה',
+            request: {
+                id: request._id,
+                amount: request.amount,
+                description: request.description,
+                category: request.category,
+                status: request.status,
+                createdAt: request.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Error in POST /children/:childId/requests:', error);
+        res.status(500).json({ 
+            message: 'שגיאה בשליחת הבקשה',
+            error: error.message 
+        });
     }
 });
 
@@ -120,81 +365,12 @@ router.put('/:childId/budget', auth, async (req, res) => {
         }
 
         // חישוב ההפרש בין התקציב החדש לישן
-        const budgetDiff = monthlyBudget - child.monthlyBudget;
+        const budgetDiff = monthlyBudget - child.monthlyAllowance;
         
-        child.monthlyBudget = monthlyBudget;
+        child.monthlyAllowance = monthlyBudget;
         child.remainingBudget += budgetDiff; // עדכון התקציב הנותר בהתאם לשינוי
         
         await child.save();
-
-        res.json(child);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// התחברות ילד עם סיסמה
-router.post('/login', async (req, res) => {
-    try {
-        const { password } = req.body;
-
-        if (!password) {
-            return res.status(400).json({ message: 'נא להזין סיסמה' });
-        }
-
-        const child = await Child.findOne({ password })
-            .populate('parent', 'email name')
-            .select('+password');
-
-        if (!child) {
-            return res.status(401).json({ message: 'סיסמה שגויה' });
-        }
-
-        const token = jwt.sign(
-            { 
-                userId: child._id,
-                role: 'child',
-                name: child.name,
-                parentId: child.parent._id
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.json({
-            token,
-            user: {
-                id: child._id,
-                name: child.name,
-                role: 'child',
-                parentId: child.parent._id,
-                monthlyBudget: child.monthlyBudget,
-                remainingBudget: child.remainingBudget
-            }
-        });
-    } catch (error) {
-        console.error('Child login error:', error);
-        res.status(500).json({ message: 'שגיאה בהתחברות' });
-    }
-});
-
-// קבלת נתוני ילד
-router.get('/:id/data', auth, async (req, res) => {
-    try {
-        const childId = req.params.id;
-        
-        const child = await Child.findById(childId)
-            .populate('parent', 'email name')
-            .populate('requests');
-
-        if (!child) {
-            return res.status(404).json({ message: 'הילד לא נמצא' });
-        }
-
-        // וידוא שהמשתמש המחובר הוא ההורה של הילד או הילד עצמו
-        if (child.parent._id.toString() !== req.user.id && child._id.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'אין הרשאה לצפות בנתונים אלו' });
-        }
 
         res.json(child);
     } catch (error) {

@@ -12,6 +12,7 @@ const connectDB = require('./db/index');
 const incomeRoutes = require('./routes/income');
 const expenseRoutes = require('./routes/expenseRoutes');
 const childRoutes = require('./routes/childRoutes');
+const parentRoutes = require('./routes/parentRoutes');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -37,6 +38,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/children', childRoutes);
+app.use('/api/parents', parentRoutes);
 console.log("fffff",process.env.MONGO_URI);
 
 connectDB();

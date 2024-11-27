@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope } from 'react-icons/fa';
-import { PieChart } from 'react-minimal-pie-chart';
-import { toast } from 'react-toastify';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope } from 'react-icons/fa';
+import 'react-toastify/dist/ReactToastify.css';
 import '../styles/ChildrenManagementPage.css';
 
 interface Child {
@@ -10,28 +10,23 @@ interface Child {
     name: string;
     monthlyAllowance: number;
     remainingBudget: number;
-    expenses: Array<{
-        amount: number;
-        category: string;
-        description: string;
-        date: string;
-    }>;
 }
 
-interface ExpensesByCategory {
-    [key: string]: number;
-}
+const API_URL = 'http://localhost:5004';
 
 const ChildrenManagementPage: React.FC = () => {
     const [children, setChildren] = useState<Child[]>([]);
+    const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+    const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [budgetAmount, setBudgetAmount] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [generatedPassword, setGeneratedPassword] = useState('');
     const [newChild, setNewChild] = useState({
         name: '',
         monthlyAllowance: 0
     });
-    const [generatedPassword, setGeneratedPassword] = useState('');
-    const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
 
     useEffect(() => {
         fetchChildren();
@@ -40,151 +35,174 @@ const ChildrenManagementPage: React.FC = () => {
     const fetchChildren = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5004/api/children', {
+            const response = await axios.get(`${API_URL}/api/children`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setChildren(response.data);
         } catch (error) {
             console.error('Error fetching children:', error);
-            toast.error('שגיאה בטעינת נתוני הילדים');
+            toast.error('שגיאה בטעינת רשימת הילדים');
         }
     };
 
     const handleAddChild = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:5004/api/children', newChild, {
+            const response = await axios.post(`${API_URL}/api/children`, newChild, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setChildren([...children, response.data.child]);
             setGeneratedPassword(response.data.password);
             setShowAddModal(false);
             setNewChild({ name: '', monthlyAllowance: 0 });
-            toast.success('הילד נוסף בהצלחה! הסיסמה היא: ' + response.data.password);
+            toast.success('הילד נוסף בהצלחה!');
         } catch (error) {
             console.error('Error adding child:', error);
             toast.error('שגיאה בהוספת הילד');
         }
     };
 
-    const handleCopyPassword = (password: string) => {
-        navigator.clipboard.writeText(password);
-        toast.success('הסיסמה הועתקה ללוח');
-    };
-
-    const handleShare = async (password: string, method: 'whatsapp' | 'sms' | 'email') => {
-        const message = `הסיסמה שלך למערכת ניהול התקציב היא: ${password}`;
-        
-        switch (method) {
-            case 'whatsapp':
-                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
-                break;
-            case 'sms':
-                window.open(`sms:?&body=${encodeURIComponent(message)}`);
-                break;
-            case 'email':
-                window.open(`mailto:?subject=הסיסמה שלך למערכת ניהול התקציב&body=${encodeURIComponent(message)}`);
-                break;
-        }
-    };
-
     const handleShowPassword = async (childId: string) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5004/api/children/${childId}/password`, {
+            const response = await axios.get(`${API_URL}/api/children/${childId}/password`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setSelectedChild(children.find(child => child._id === childId) || null);
-            setShowPasswordModal(true);
-            setGeneratedPassword(response.data.password);
-        } catch (error) {
+            
+            const child = children.find(child => child._id === childId);
+            if (child) {
+                setSelectedChild(child);
+                setGeneratedPassword(response.data.password);
+                setShowPasswordModal(true);
+            }
+        } catch (error: any) {
             console.error('Error fetching password:', error);
-            toast.error('שגיאה בטעינת הסיסמה');
+            toast.error(error.response?.data?.message || 'שגיאה בטעינת הסיסמה');
         }
     };
 
-    const calculateExpensesByCategory = (expenses: Child['expenses']): ExpensesByCategory => {
-        return expenses.reduce((acc, expense) => {
-            acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-            return acc;
-        }, {} as ExpensesByCategory);
+    const handleDeleteChild = async (childId: string) => {
+        if (window.confirm('האם אתה בטוח שברצונך למחוק את הילד?')) {
+            try {
+                const token = localStorage.getItem('token');
+                await axios.delete(`${API_URL}/api/children/${childId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setChildren(children.filter(child => child._id !== childId));
+                toast.success('הילד נמחק בהצלחה!');
+            } catch (error) {
+                console.error('Error deleting child:', error);
+                toast.error('שגיאה במחיקת הילד');
+            }
+        }
     };
 
-    const getRandomColor = () => {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
+    const handleAddBudget = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedChild || !budgetAmount) return;
+
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/api/children/${selectedChild._id}/add-budget`, {
+                amount: parseFloat(budgetAmount)
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            await fetchChildren();
+            setShowBudgetModal(false);
+            setBudgetAmount('');
+            setSelectedChild(null);
+            toast.success('התקציב עודכן בהצלחה');
+        } catch (error) {
+            console.error('Error adding budget:', error);
+            toast.error('שגיאה בהוספת התקציב');
+        } finally {
+            setLoading(false);
         }
-        return color;
+    };
+
+    const handleShare = (method: string, password: string) => {
+        let shareUrl = '';
+        const message = `הסיסמה שלך היא: ${password}`;
+        
+        switch (method) {
+            case 'whatsapp':
+                shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                break;
+            case 'sms':
+                shareUrl = `sms:?body=${encodeURIComponent(message)}`;
+                break;
+            case 'email':
+                shareUrl = `mailto:?subject=הסיסמה שלך&body=${encodeURIComponent(message)}`;
+                break;
+        }
+        
+        if (shareUrl) {
+            window.open(shareUrl, '_blank');
+        }
+    };
+
+    const openBudgetModal = (child: Child) => {
+        setSelectedChild(child);
+        setShowBudgetModal(true);
+    };
+
+    const closeBudgetModal = () => {
+        setShowBudgetModal(false);
+        setBudgetAmount('');
+        setSelectedChild(null);
     };
 
     return (
-        <div className="children-management-page" dir="rtl">
+        <div className="children-management-page">
             <div className="header">
                 <h1>ניהול ילדים</h1>
-                <button className="add-button" onClick={() => setShowAddModal(true)}>
+                <button className="add-child-btn" onClick={() => setShowAddModal(true)}>
                     <FaPlus /> הוסף ילד
                 </button>
             </div>
-
-            <div className="children-grid">
-                {children.map((child) => (
+            
+            <div className="children-list">
+                {children.map(child => (
                     <div key={child._id} className="child-card">
                         <div className="child-header">
                             <div className="child-info">
                                 <FaChild className="child-icon" />
-                                <h2>{child.name}</h2>
+                                <h3>{child.name}</h3>
                             </div>
-                            <button 
-                                className="password-button"
-                                onClick={() => handleShowPassword(child._id)}
-                                title="הצג סיסמה"
-                            >
-                                <FaKey />
-                            </button>
+                            <div className="child-actions">
+                                <button 
+                                    className="password-button"
+                                    onClick={() => handleShowPassword(child._id)}
+                                    title="הצג סיסמה"
+                                >
+                                    <FaKey />
+                                </button>
+                                <button 
+                                    onClick={() => openBudgetModal(child)}
+                                    className="add-budget-button"
+                                >
+                                    <FaPlus /> הוסף תקציב
+                                </button>
+                                <button 
+                                    className="delete-button"
+                                    onClick={() => handleDeleteChild(child._id)}
+                                >
+                                    מחק ילד
+                                </button>
+                            </div>
                         </div>
                         <div className="budget-info">
                             <p>תקציב חודשי: ₪{child.monthlyAllowance.toLocaleString()}</p>
-                            <p>נותר: ₪{child.remainingBudget.toLocaleString()}</p>
-                        </div>
-                        <div className="expenses-chart">
-                            {child.expenses.length > 0 ? (
-                                <>
-                                    <PieChart
-                                        data={Object.entries(calculateExpensesByCategory(child.expenses)).map(([category, amount]) => ({
-                                            title: category,
-                                            value: amount,
-                                            color: getRandomColor()
-                                        }))}
-                                        lineWidth={20}
-                                        paddingAngle={2}
-                                        labelStyle={{
-                                            fontSize: '5px',
-                                            fontFamily: 'sans-serif'
-                                        }}
-                                        label={({ dataEntry }) => 
-                                            `${dataEntry.title} (₪${dataEntry.value.toLocaleString()})`
-                                        }
-                                        labelPosition={75}
-                                    />
-                                    <div className="chart-legend">
-                                        {Object.entries(calculateExpensesByCategory(child.expenses)).map(([category, amount]) => (
-                                            <div key={category} className="legend-item">
-                                                <span className="color-box" style={{ backgroundColor: getRandomColor() }}></span>
-                                                <span>{category}: ₪{amount.toLocaleString()}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            ) : (
-                                <p className="no-expenses">אין הוצאות להצגה</p>
-                            )}
+                            <p>יתרה: ₪{child.remainingBudget.toLocaleString()}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
+            {/* מודל הוספת ילד */}
             {showAddModal && (
                 <div className="modal">
                     <div className="modal-content">
@@ -214,49 +232,95 @@ const ChildrenManagementPage: React.FC = () => {
                             <button onClick={handleAddChild} className="submit-button">
                                 הוסף
                             </button>
-                            <button onClick={() => {
-                                setShowAddModal(false);
-                                setNewChild({ name: '', monthlyAllowance: 0 });
-                            }} className="cancel-button">
+                            <button 
+                                onClick={() => {
+                                    setShowAddModal(false);
+                                    setNewChild({ name: '', monthlyAllowance: 0 });
+                                }} 
+                                className="cancel-button"
+                            >
                                 ביטול
                             </button>
                         </div>
-                        {generatedPassword && (
-                            <div className="password-display">
-                                <p>סיסמת הילד היא: <strong>{generatedPassword}</strong></p>
-                                <p className="password-note">שמור את הסיסמה במקום בטוח!</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
+
+            {/* מודל הצגת סיסמה */}
             {showPasswordModal && selectedChild && (
                 <div className="modal">
                     <div className="modal-content">
                         <h2>הסיסמה של {selectedChild.name}</h2>
                         <div className="password-display">
-                            <p className="password-value">{generatedPassword}</p>
-                            <div className="password-actions">
-                                <button onClick={() => handleCopyPassword(generatedPassword)}>
-                                    <FaCopy /> העתק
+                            <div className="password-text">{generatedPassword}</div>
+                            <button 
+                                className="copy-button"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(generatedPassword);
+                                    toast.success('הסיסמה הועתקה ללוח');
+                                }}
+                            >
+                                <FaCopy /> העתק
+                            </button>
+                        </div>
+                        <div className="share-options">
+                            <h3>שתף את הסיסמה דרך:</h3>
+                            <div className="share-buttons">
+                                <button onClick={() => handleShare('whatsapp', generatedPassword)}>
+                                    <FaWhatsapp /> WhatsApp
                                 </button>
-                                <button onClick={() => handleShare(generatedPassword, 'whatsapp')}>
-                                    <FaWhatsapp /> שתף בווצאפ
+                                <button onClick={() => handleShare('sms', generatedPassword)}>
+                                    <FaSms /> SMS
                                 </button>
-                                <button onClick={() => handleShare(generatedPassword, 'sms')}>
-                                    <FaSms /> שתף בהודעה
-                                </button>
-                                <button onClick={() => handleShare(generatedPassword, 'email')}>
-                                    <FaEnvelope /> שתף באימייל
+                                <button onClick={() => handleShare('email', generatedPassword)}>
+                                    <FaEnvelope /> Email
                                 </button>
                             </div>
                         </div>
                         <button 
+                            className="close-button" 
                             onClick={() => setShowPasswordModal(false)}
-                            className="close-button"
                         >
                             סגור
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* מודל הוספת תקציב */}
+            {showBudgetModal && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>הוספת תקציב ל{selectedChild?.name}</h2>
+                        <form onSubmit={handleAddBudget}>
+                            <div className="form-group">
+                                <label>סכום:</label>
+                                <input
+                                    type="number"
+                                    value={budgetAmount}
+                                    onChange={(e) => setBudgetAmount(e.target.value)}
+                                    placeholder="הכנס סכום"
+                                    required
+                                />
+                            </div>
+                            <div className="modal-buttons">
+                                <button 
+                                    type="submit" 
+                                    className="submit-button"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'מעדכן...' : 'הוסף תקציב'}
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="cancel-button"
+                                    onClick={closeBudgetModal}
+                                    disabled={loading}
+                                >
+                                    ביטול
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
