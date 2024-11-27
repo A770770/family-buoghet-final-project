@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/DashboardPage.css';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank, FaChild } from 'react-icons/fa';
+import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank, FaChild, FaLightbulb } from 'react-icons/fa';
 import { FiMenu, FiUser, FiLogOut, FiSettings, FiPieChart, FiDollarSign } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import Confetti from 'react-confetti';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSpring, animated } from 'react-spring';
 
 interface DashboardData {
     currentBalance: number;
@@ -25,7 +28,35 @@ interface DashboardData {
     }>;
 }
 
-const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9FA8DA'];
+const COLORS = [
+    '#2193b0',  // כחול
+    '#ee0979',  // ורוד
+    '#4CA1AF',  // טורקיז
+    '#ff4b1f',  // כתום
+    '#56CCF2',  // תכלת
+    '#6dd5ed',  // כחול בהיר
+    '#ff6a00',  // כתום בהיר
+    '#C4E0E5',  // תכלת בהיר
+    '#ff9068',  // סלמון
+    '#2F80ED'   // כחול כהה
+];
+
+const getGradientColors = (index: number) => {
+    const startColor = COLORS[index % 5];
+    const endColor = COLORS[(index % 5) + 5];
+    return { startColor, endColor };
+};
+
+const savingTips = [
+    "💡 טיפ: הגדר תקציב חודשי ועקוב אחריו בקפידה",
+    "💰 טיפ: שים לב להוצאות הקטנות - הן מצטברות!",
+    "🎯 טיפ: הגדר יעדי חיסכון ברורים",
+    "🏦 טיפ: בדוק את דמי הניהול בחשבון הבנק שלך",
+    "🛒 טיפ: ערוך רשימת קניות לפני שאתה יוצא לקניות",
+    "💳 טיפ: הימנע משימוש בכרטיס אשראי לרכישות קטנות",
+    "📊 טיפ: עקוב אחר ההוצאות השוטפות שלך באופן קבוע",
+    "🏠 טיפ: בדוק אפשרויות לחסוך בהוצאות הקבועות כמו חשמל ומים"
+];
 
 const DashboardPage: React.FC = () => {
     const navigate = useNavigate();
@@ -37,6 +68,17 @@ const DashboardPage: React.FC = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [currentTip, setCurrentTip] = useState('');
+    const [showTip, setShowTip] = useState(false);
+    const [tipState, setTipState] = useState<'entering' | 'showing' | 'exiting'>('entering');
+
+    // אנימציה למספרים
+    const numberProps = useSpring({
+        from: { val: 0 },
+        to: { val: data?.currentBalance || 0 },
+        config: { duration: 1000 }
+    });
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -93,9 +135,40 @@ const DashboardPage: React.FC = () => {
         fetchData();
     }, [navigate]);
 
+    useEffect(() => {
+        // הצגת קונפטי בכניסה ראשונית
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
+
+        // בחירת טיפ רנדומלי והצגתו
+        const randomTip = savingTips[Math.floor(Math.random() * savingTips.length)];
+        setCurrentTip(randomTip);
+        setShowTip(true);
+        setTipState('entering');
+
+        // החלפת טיפים כל 10 שניות
+        const tipInterval = setInterval(() => {
+            setTipState('exiting');
+            setTimeout(() => {
+                const newTip = savingTips[Math.floor(Math.random() * savingTips.length)];
+                setCurrentTip(newTip);
+                setTipState('entering');
+            }, 500);
+        }, 10000);
+
+        return () => clearInterval(tipInterval);
+    }, []);
+
     const handleLogout = () => {
         localStorage.clear();
         navigate('/login');
+    };
+
+    const handleCloseTip = () => {
+        setTipState('exiting');
+        setTimeout(() => {
+            setShowTip(false);
+        }, 500);
     };
 
     const filteredExpenses = data?.recentExpenses.filter(expense => 
@@ -119,7 +192,37 @@ const DashboardPage: React.FC = () => {
 
     return (
         <div className="dashboard-container">
-            <header className="dashboard-header">
+            {showConfetti && <Confetti numberOfPieces={200} recycle={false} />}
+            
+            <AnimatePresence>
+                {showTip && (
+                    <motion.div 
+                        className="saving-tip"
+                        data-state={tipState}
+                        initial={{ x: 100, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: 100, opacity: 0 }}
+                        transition={{ 
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 15
+                        }}
+                    >
+                        <button className="close-tip-button" onClick={handleCloseTip}>
+                            ✕
+                        </button>
+                        <FaLightbulb className="tip-icon" />
+                        <span>{currentTip}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <motion.div 
+                className="dashboard-header"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+            >
                 <div className="header-left">
                     <div 
                         className="user-button" 
@@ -181,68 +284,157 @@ const DashboardPage: React.FC = () => {
                         </div>
                     )}
                 </div>
-            </header>
+            </motion.div>
 
-            <div className="dashboard-stats">
-                <div className="stat-card balance">
+            <motion.div 
+                className="dashboard-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+            >
+                <div className="stat-card current-balance">
                     <h3>יתרה נוכחית</h3>
-                    <p className={data.currentBalance < 0 ? 'negative' : 'positive'}>
-                        ₪{data.currentBalance.toLocaleString()}
-                    </p>
+                    <div className="balance-amount">
+                        <span>₪</span>
+                        <span>{data.currentBalance.toLocaleString()}</span>
+                    </div>
                 </div>
+
                 <div className="stat-card expenses">
                     <h3>סך הוצאות החודש</h3>
                     <p>₪{data.totalExpenses.toLocaleString()}</p>
                 </div>
-            </div>
+            </motion.div>
 
             <div className="charts-container">
-                <div className="chart-section">
+                <div className="chart-section pie-chart">
                     <h3>הוצאות שוטפות</h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={400}>
                         <PieChart>
+                            <defs>
+                                {nonRecurringExpenses.map((_, index) => (
+                                    <linearGradient
+                                        key={`gradient-${index}`}
+                                        id={`gradient-${index}`}
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stopColor={getGradientColors(index).startColor}
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor={getGradientColors(index).endColor}
+                                        />
+                                    </linearGradient>
+                                ))}
+                            </defs>
                             <Pie
                                 data={nonRecurringExpenses}
                                 dataKey="amount"
                                 nameKey="category"
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={80}
-                                label={({ category, percent }) => 
-                                    `${category} ${(percent * 100).toFixed(0)}%`
+                                innerRadius={80}
+                                outerRadius={160}
+                                paddingAngle={5}
+                                label={({ name, percent }) => 
+                                    `${name} ${(percent * 100).toFixed(0)}%`
                                 }
+                                labelLine={true}
                             >
-                                {nonRecurringExpenses.map((entry, index) => (
-                                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                {nonRecurringExpenses.map((_, index) => (
+                                    <Cell 
+                                        key={`cell-${index}`}
+                                        fill={`url(#gradient-${index})`}
+                                    />
                                 ))}
                             </Pie>
-                            <Tooltip />
+                            <Tooltip 
+                                formatter={(value: number) => `₪${value.toLocaleString()}`}
+                                contentStyle={{
+                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+                                }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
+                    <div className="chart-total">
+                        <span>סה״כ הוצאות שוטפות:</span>
+                        <span className="total-amount">
+                            ₪{nonRecurringExpenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
+                        </span>
+                    </div>
                 </div>
 
-                <div className="chart-section">
+                <div className="chart-section pie-chart">
                     <h3>הוצאות קבועות</h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={400}>
                         <PieChart>
+                            <defs>
+                                {recurringExpenses.map((_, index) => (
+                                    <linearGradient
+                                        key={`gradient-recurring-${index}`}
+                                        id={`gradient-recurring-${index}`}
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stopColor={getGradientColors(index + 5).startColor}
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor={getGradientColors(index + 5).endColor}
+                                        />
+                                    </linearGradient>
+                                ))}
+                            </defs>
                             <Pie
                                 data={recurringExpenses}
                                 dataKey="amount"
                                 nameKey="category"
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={80}
-                                label={({ category, percent }) => 
-                                    `${category} ${(percent * 100).toFixed(0)}%`
+                                innerRadius={80}
+                                outerRadius={160}
+                                paddingAngle={5}
+                                label={({ name, percent }) => 
+                                    `${name} ${(percent * 100).toFixed(0)}%`
                                 }
+                                labelLine={true}
                             >
-                                {recurringExpenses.map((entry, index) => (
-                                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                {recurringExpenses.map((_, index) => (
+                                    <Cell 
+                                        key={`cell-recurring-${index}`}
+                                        fill={`url(#gradient-recurring-${index})`}
+                                    />
                                 ))}
                             </Pie>
-                            <Tooltip />
+                            <Tooltip 
+                                formatter={(value: number) => `₪${value.toLocaleString()}`}
+                                contentStyle={{
+                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+                                }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
+                    <div className="chart-total">
+                        <span>סה״כ הוצאות קבועות:</span>
+                        <span className="total-amount">
+                            ₪{recurringExpenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
+                        </span>
+                    </div>
                 </div>
             </div>
 
