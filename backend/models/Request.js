@@ -32,14 +32,11 @@ const requestSchema = new mongoose.Schema({
     },
     createdAt: { 
         type: Date, 
-        default: Date.now,
-        index: true
+        default: Date.now
     },
     respondedAt: { 
         type: Date 
     }
-}, {
-    timestamps: true
 });
 
 // וירטואלי - זמן המתנה בשעות
@@ -50,8 +47,15 @@ requestSchema.virtual('waitingTime').get(function() {
     return Math.round((Date.now() - this.createdAt) / (1000 * 60 * 60));
 });
 
-// אינדקסים לביצועים טובים יותר
-requestSchema.index({ childId: 1, status: 1 });
-requestSchema.index({ createdAt: -1 });
+// הגדרת toJSON כדי שיכלול שדות וירטואליים
+requestSchema.set('toJSON', {
+    virtuals: true,
+    transform: function(doc, ret) {
+        ret.id = ret._id;
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+    }
+});
 
 module.exports = mongoose.model('Request', requestSchema);

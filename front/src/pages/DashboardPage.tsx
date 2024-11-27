@@ -97,10 +97,9 @@ const DashboardPage: React.FC = () => {
         const checkNewRequests = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const userId = localStorage.getItem('userId');
                 
                 const response = await axios.get(
-                    `http://localhost:5004/api/parents/${userId}/pending-requests`,
+                    `http://localhost:5004/api/parents/pending-requests`,
                     {
                         headers: { Authorization: `Bearer ${token}` }
                     }
@@ -125,11 +124,14 @@ const DashboardPage: React.FC = () => {
             }
         };
 
-        checkNewRequests();
-        // בדיקה כל 5 דקות
-        const interval = setInterval(checkNewRequests, 5 * 60 * 1000);
-
-        return () => clearInterval(interval);
+        // בדוק בקשות רק אם המשתמש הוא הורה
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'parent') {
+            checkNewRequests();
+            // בדיקה כל 5 דקות
+            const interval = setInterval(checkNewRequests, 5 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
     }, [navigate]);
 
     const handleLogout = () => {

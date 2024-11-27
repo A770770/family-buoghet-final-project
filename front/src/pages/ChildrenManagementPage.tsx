@@ -1,35 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope } from 'react-icons/fa';
+import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope, FaTrash, FaMinus, FaBell } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/ChildrenManagementPage.css';
+
+interface Request {
+    id: string;
+    childId: {
+        _id: string;
+        name: string;
+    };
+    amount: number;
+    description: string;
+    category: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: string;
+    updatedAt: string;
+    responseMessage?: string;
+    waitingTime: number;
+}
 
 interface Child {
     _id: string;
     name: string;
     monthlyAllowance: number;
     remainingBudget: number;
+    pendingRequests?: Request[];
 }
 
 const API_URL = 'http://localhost:5004';
 
 const ChildrenManagementPage: React.FC = () => {
     const [children, setChildren] = useState<Child[]>([]);
-    const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+    const [selectedChild, setSelectedChild] = useState<string | null>(null);
+    const [showAddChildModal, setShowAddChildModal] = useState(false);
+    const [newChildName, setNewChildName] = useState('');
+    const [newChildAllowance, setNewChildAllowance] = useState('');
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [selectedChildForShare, setSelectedChildForShare] = useState<Child | null>(null);
     const [showBudgetModal, setShowBudgetModal] = useState(false);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [budgetAmount, setBudgetAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [generatedPassword, setGeneratedPassword] = useState('');
-    const [newChild, setNewChild] = useState({
-        name: '',
-        monthlyAllowance: 0
-    });
 
     useEffect(() => {
         fetchChildren();
+        fetchPendingRequests();
+        
+        // רענון כל 30 שניות
+        const interval = setInterval(() => {
+            fetchChildren();
+            fetchPendingRequests();
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const fetchChildren = async () => {
@@ -45,16 +70,55 @@ const ChildrenManagementPage: React.FC = () => {
         }
     };
 
+    const fetchPendingRequests = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/api/parents/pending-requests`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // ארגן את הבקשות לפי ילד
+            const requestsByChild = response.data.reduce((acc: { [key: string]: Request[] }, request: Request) => {
+                const childId = request.childId._id; 
+                if (!acc[childId]) {
+                    acc[childId] = [];
+                }
+                acc[childId].push({
+                    ...request,
+                    id: request.id,
+                    childId: request.childId 
+                });
+                return acc;
+            }, {});
+
+            // עדכן את הילדים עם הבקשות שלהם
+            setChildren(prevChildren => 
+                prevChildren.map(child => ({
+                    ...child,
+                    pendingRequests: requestsByChild[child._id] || []
+                }))
+            );
+
+            console.log('Children after update:', children);
+        } catch (error) {
+            console.error('Error fetching pending requests:', error);
+            toast.error('שגיאה בטעינת הבקשות הממתינות');
+        }
+    };
+
     const handleAddChild = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${API_URL}/api/children`, newChild, {
+            const response = await axios.post(`${API_URL}/api/children`, {
+                name: newChildName,
+                monthlyAllowance: Number(newChildAllowance)
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setChildren([...children, response.data.child]);
-            setGeneratedPassword(response.data.password);
-            setShowAddModal(false);
-            setNewChild({ name: '', monthlyAllowance: 0 });
+            setShowAddChildModal(false);
+            setNewChildName('');
+            setNewChildAllowance('');
             toast.success('הילד נוסף בהצלחה!');
         } catch (error) {
             console.error('Error adding child:', error);
@@ -71,9 +135,9 @@ const ChildrenManagementPage: React.FC = () => {
             
             const child = children.find(child => child._id === childId);
             if (child) {
-                setSelectedChild(child);
+                setSelectedChildForShare(child);
                 setGeneratedPassword(response.data.password);
-                setShowPasswordModal(true);
+                setShowShareModal(true);
             }
         } catch (error: any) {
             console.error('Error fetching password:', error);
@@ -97,15 +161,15 @@ const ChildrenManagementPage: React.FC = () => {
         }
     };
 
-    const handleAddBudget = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAddBudget = async (action: 'add' | 'reduce') => {
         if (!selectedChild || !budgetAmount) return;
 
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/api/children/${selectedChild._id}/add-budget`, {
-                amount: parseFloat(budgetAmount)
+            await axios.post(`${API_URL}/api/children/${selectedChild}/add-budget`, {
+                amount: parseFloat(budgetAmount),
+                action
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -144,66 +208,147 @@ const ChildrenManagementPage: React.FC = () => {
         }
     };
 
-    const openBudgetModal = (child: Child) => {
-        setSelectedChild(child);
-        setShowBudgetModal(true);
-    };
-
-    const closeBudgetModal = () => {
-        setShowBudgetModal(false);
-        setBudgetAmount('');
-        setSelectedChild(null);
+    const handleRequestAction = async (requestId: string, action: 'approve' | 'reject', message?: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+                `${API_URL}/api/parents/requests/${requestId}/${action}`, 
+                { message },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            // עדכון הילד הספציפי עם הנתונים החדשים
+            const { child: updatedChild } = response.data;
+            setChildren(prevChildren => 
+                prevChildren.map(child => 
+                    child._id === updatedChild._id 
+                        ? { 
+                            ...child, 
+                            remainingBudget: updatedChild.remainingBudget,
+                            pendingRequests: child.pendingRequests?.filter(req => req.id !== requestId)
+                        }
+                        : child
+                )
+            );
+            
+            toast.success(action === 'approve' ? 'הבקשה אושרה בהצלחה' : 'הבקשה נדחתה');
+        } catch (error: any) {
+            console.error('Error handling request:', error);
+            toast.error(error.response?.data?.message || 'שגיאה בטיפול בבקשה');
+        }
     };
 
     return (
         <div className="children-management-page">
-            <div className="header">
-                <h1>ניהול ילדים</h1>
-                <button className="add-child-btn" onClick={() => setShowAddModal(true)}>
-                    <FaPlus /> הוסף ילד
-                </button>
-            </div>
-            
+            <h1>ניהול ילדים</h1>
+            <button className="add-child-button" onClick={() => setShowAddChildModal(true)}>
+                <FaPlus /> הוסף ילד
+            </button>
             <div className="children-list">
                 {children.map(child => (
                     <div key={child._id} className="child-card">
-                        <div className="child-header">
-                            <div className="child-info">
-                                <FaChild className="child-icon" />
-                                <h3>{child.name}</h3>
+                        <div 
+                            className="child-info"
+                            onClick={() => setSelectedChild(selectedChild === child._id ? null : child._id)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <div className="child-header">
+                                <h2><FaChild /> {child.name}</h2>
+                                <div className="child-actions">
+                                    <button 
+                                        className="action-button share-button" 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleShowPassword(child._id);
+                                        }}
+                                        title="הצג קוד גישה"
+                                    >
+                                        <FaKey />
+                                    </button>
+                                    <button 
+                                        className="action-button budget-button" 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedChild(child._id);
+                                            setShowBudgetModal(true);
+                                        }}
+                                        title="עדכן תקציב"
+                                    >
+                                        <FaPlus />
+                                    </button>
+                                    <button 
+                                        className="action-button delete-button" 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${child.name}?`)) {
+                                                handleDeleteChild(child._id);
+                                            }
+                                        }}
+                                        title="מחק ילד"
+                                    >
+                                        <FaTrash />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="child-actions">
-                                <button 
-                                    className="password-button"
-                                    onClick={() => handleShowPassword(child._id)}
-                                    title="הצג סיסמה"
-                                >
-                                    <FaKey />
-                                </button>
-                                <button 
-                                    onClick={() => openBudgetModal(child)}
-                                    className="add-budget-button"
-                                >
-                                    <FaPlus /> הוסף תקציב
-                                </button>
-                                <button 
-                                    className="delete-button"
-                                    onClick={() => handleDeleteChild(child._id)}
-                                >
-                                    מחק ילד
-                                </button>
+                            <div className="child-details">
+                                <div className="budget-info">
+                                    <div className="budget-item">
+                                        <span className="budget-label">הקצבה חודשית:</span>
+                                        <span className="budget-value">₪{child.monthlyAllowance.toLocaleString()}</span>
+                                    </div>
+                                    <div className="budget-item">
+                                        <span className="budget-label">יתרה:</span>
+                                        <span className={`budget-value ${child.remainingBudget < 0 ? 'negative' : ''}`}>
+                                            ₪{child.remainingBudget.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                {child.pendingRequests && child.pendingRequests.length > 0 && (
+                                    <div className="notification-badge" title="בקשות ממתינות">
+                                        <FaBell />
+                                        <span className="notification-count">
+                                            {child.pendingRequests.length}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div className="budget-info">
-                            <p>תקציב חודשי: ₪{child.monthlyAllowance.toLocaleString()}</p>
-                            <p>יתרה: ₪{child.remainingBudget.toLocaleString()}</p>
-                        </div>
+                        {selectedChild === child._id && child.pendingRequests && child.pendingRequests.length > 0 && (
+                            <div className="pending-requests">
+                                <h3>בקשות ממתינות:</h3>
+                                <ul>
+                                    {child.pendingRequests.map(request => (
+                                        <li key={request.id}>
+                                            <p>סכום: ₪{request.amount.toLocaleString()}</p>
+                                            <p>תיאור: {request.description}</p>
+                                            <p>קטגוריה: {request.category}</p>
+                                            <p>תאריך: {new Date(request.createdAt).toLocaleDateString('he-IL')}</p>
+                                            <p>זמן המתנה: {request.waitingTime} שעות</p>
+                                            <div className="request-actions">
+                                                <button 
+                                                    className="approve-button"
+                                                    onClick={() => handleRequestAction(request.id, 'approve')}
+                                                >
+                                                    אשר
+                                                </button>
+                                                <button 
+                                                    className="reject-button"
+                                                    onClick={() => handleRequestAction(request.id, 'reject')}
+                                                >
+                                                    דחה
+                                                </button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
 
             {/* מודל הוספת ילד */}
-            {showAddModal && (
+            {showAddChildModal && (
                 <div className="modal">
                     <div className="modal-content">
                         <h2>הוספת ילד חדש</h2>
@@ -211,8 +356,8 @@ const ChildrenManagementPage: React.FC = () => {
                             <label>שם הילד:</label>
                             <input
                                 type="text"
-                                value={newChild.name}
-                                onChange={(e) => setNewChild({ ...newChild, name: e.target.value })}
+                                value={newChildName}
+                                onChange={(e) => setNewChildName(e.target.value)}
                                 required
                             />
                         </div>
@@ -220,11 +365,8 @@ const ChildrenManagementPage: React.FC = () => {
                             <label>תקציב חודשי:</label>
                             <input
                                 type="number"
-                                value={newChild.monthlyAllowance}
-                                onChange={(e) => setNewChild({ 
-                                    ...newChild, 
-                                    monthlyAllowance: Number(e.target.value) 
-                                })}
+                                value={newChildAllowance}
+                                onChange={(e) => setNewChildAllowance(e.target.value)}
                                 required
                             />
                         </div>
@@ -234,8 +376,9 @@ const ChildrenManagementPage: React.FC = () => {
                             </button>
                             <button 
                                 onClick={() => {
-                                    setShowAddModal(false);
-                                    setNewChild({ name: '', monthlyAllowance: 0 });
+                                    setShowAddChildModal(false);
+                                    setNewChildName('');
+                                    setNewChildAllowance('');
                                 }} 
                                 className="cancel-button"
                             >
@@ -247,10 +390,10 @@ const ChildrenManagementPage: React.FC = () => {
             )}
 
             {/* מודל הצגת סיסמה */}
-            {showPasswordModal && selectedChild && (
+            {showShareModal && selectedChildForShare && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h2>הסיסמה של {selectedChild.name}</h2>
+                        <h2>הסיסמה של {selectedChildForShare.name}</h2>
                         <div className="password-display">
                             <div className="password-text">{generatedPassword}</div>
                             <button 
@@ -279,7 +422,7 @@ const ChildrenManagementPage: React.FC = () => {
                         </div>
                         <button 
                             className="close-button" 
-                            onClick={() => setShowPasswordModal(false)}
+                            onClick={() => setShowShareModal(false)}
                         >
                             סגור
                         </button>
@@ -287,12 +430,12 @@ const ChildrenManagementPage: React.FC = () => {
                 </div>
             )}
 
-            {/* מודל הוספת תקציב */}
+            {/* מודל עדכון תקציב */}
             {showBudgetModal && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h2>הוספת תקציב ל{selectedChild?.name}</h2>
-                        <form onSubmit={handleAddBudget}>
+                        <h2>עדכון תקציב</h2>
+                        <div className="budget-form">
                             <div className="form-group">
                                 <label>סכום:</label>
                                 <input
@@ -300,27 +443,35 @@ const ChildrenManagementPage: React.FC = () => {
                                     value={budgetAmount}
                                     onChange={(e) => setBudgetAmount(e.target.value)}
                                     placeholder="הכנס סכום"
-                                    required
                                 />
                             </div>
-                            <div className="modal-buttons">
+                            <div className="budget-actions">
                                 <button 
-                                    type="submit" 
-                                    className="submit-button"
+                                    className="add-budget-button"
+                                    onClick={() => handleAddBudget('add')}
                                     disabled={loading}
                                 >
-                                    {loading ? 'מעדכן...' : 'הוסף תקציב'}
+                                    <FaPlus /> הוסף לתקציב
                                 </button>
                                 <button 
-                                    type="button" 
-                                    className="cancel-button"
-                                    onClick={closeBudgetModal}
+                                    className="reduce-budget-button"
+                                    onClick={() => handleAddBudget('reduce')}
                                     disabled={loading}
                                 >
-                                    ביטול
+                                    <FaMinus /> הורד מהתקציב
                                 </button>
                             </div>
-                        </form>
+                            <button 
+                                className="cancel-button"
+                                onClick={() => {
+                                    setShowBudgetModal(false);
+                                    setBudgetAmount('');
+                                }}
+                                disabled={loading}
+                            >
+                                ביטול
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

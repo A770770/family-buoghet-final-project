@@ -20,7 +20,6 @@ interface ChildData {
     name: string;
     monthlyAllowance: number;
     remainingBudget: number;
-    requests: Request[];
 }
 
 const API_URL = 'http://localhost:5004';
@@ -38,6 +37,7 @@ const categories = ['משחקים', 'בגדים', 'ממתקים', 'צעצועי�
 const ChildDashboardPage: React.FC = () => {
     const navigate = useNavigate();
     const [childData, setChildData] = useState<ChildData | null>(null);
+    const [requests, setRequests] = useState<Request[]>([]);
     const [requestAmount, setRequestAmount] = useState('');
     const [requestDescription, setRequestDescription] = useState('');
     const [requestCategory, setRequestCategory] = useState(categories[0]);
@@ -59,6 +59,7 @@ const ChildDashboardPage: React.FC = () => {
         }
 
         fetchChildData(childId, token);
+        fetchRequests(childId, token);
     }, [navigate]);
 
     const fetchChildData = async (childId: string, token: string) => {
@@ -70,6 +71,22 @@ const ChildDashboardPage: React.FC = () => {
         } catch (error) {
             console.error('Error fetching child data:', error);
             toast.error('שגיאה בטעינת הנתונים');
+            if (axios.isAxiosError(error) && error.response?.status === 401) {
+                localStorage.removeItem('childToken');
+                localStorage.removeItem('childId');
+                navigate('/login');
+            }
+        }
+    };
+
+    const fetchRequests = async (childId: string, token: string) => {
+        try {
+            const response = await axios.get(`${API_URL}/api/children/${childId}/requests`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setRequests(response.data);
+        } catch (error) {
+            console.error('Error fetching requests:', error);
             if (axios.isAxiosError(error) && error.response?.status === 401) {
                 localStorage.removeItem('childToken');
                 localStorage.removeItem('childId');
@@ -98,8 +115,7 @@ const ChildDashboardPage: React.FC = () => {
             const response = await axios.post(`${API_URL}/api/children/${childId}/requests`, {
                 amount: parseFloat(requestAmount),
                 description: requestDescription,
-                category: requestCategory,
-                childId: childId
+                category: requestCategory
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -110,7 +126,8 @@ const ChildDashboardPage: React.FC = () => {
             setShowRequestModal(false);
             
             // רענון הנתונים אחרי שליחת הבקשה
-            fetchChildData(childId, token);
+            await fetchChildData(childId, token);
+            await fetchRequests(childId, token);
         } catch (error) {
             console.error('Error submitting request:', error);
             if (axios.isAxiosError(error)) {
@@ -209,7 +226,7 @@ const ChildDashboardPage: React.FC = () => {
                 </div>
 
                 <div className="activity-cards">
-                    {childData?.requests?.map((request) => (
+                    {requests.map((request) => (
                         <div key={request.id} className={`activity-card ${request.status}`}>
                             <div className="request-header">
                                 {request.status === 'pending' && (
@@ -244,7 +261,7 @@ const ChildDashboardPage: React.FC = () => {
                             )}
                         </div>
                     ))}
-                    {(!childData?.requests || childData.requests.length === 0) && (
+                    {(!requests || requests.length === 0) && (
                         <div className="empty-state">
                             <FaFileAlt className="empty-icon" />
                             <p>עדיין אין לך בקשות</p>

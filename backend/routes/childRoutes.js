@@ -129,36 +129,43 @@ router.delete('/:childId', auth, async (req, res) => {
     }
 });
 
-// הוספת תקציב לילד
+// עדכון תקציב
 router.post('/:childId/add-budget', auth, async (req, res) => {
     try {
-        const { amount } = req.body;
-        const { childId } = req.params;
-
-        if (!amount || amount <= 0) {
-            return res.status(400).json({ message: 'יש להזין סכום חיובי' });
+        const { amount, action } = req.body;
+        
+        if (!amount || typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({ message: 'סכום לא תקין' });
         }
 
-        const child = await Child.findOne({ _id: childId, parent: req.user.id });
-        
+        const child = await Child.findById(req.params.childId);
         if (!child) {
-            return res.status(404).json({ message: 'הילד לא נמצא' });
+            return res.status(404).json({ message: 'ילד לא נמצא' });
+        }
+
+        // בדיקת הרשאות
+        if (req.user.role === 'parent' && child.parent.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'אין לך הרשאה לעדכן תקציב לילד זה' });
         }
 
         // עדכון התקציב
-        child.monthlyAllowance += amount;
-        child.remainingBudget += amount;
-        
+        if (action === 'add') {
+            child.remainingBudget += amount;
+        } else if (action === 'reduce') {
+            child.remainingBudget -= amount;
+        } else {
+            return res.status(400).json({ message: 'פעולה לא תקינה' });
+        }
+
         await child.save();
 
-        res.json({
-            message: 'התקציב עודכן בהצלחה',
-            newBudget: child.monthlyAllowance,
-            remainingBudget: child.remainingBudget
+        res.json({ 
+            message: `התקציב ${action === 'add' ? 'הוגדל' : 'הוקטן'} בהצלחה`,
+            child 
         });
     } catch (error) {
-        console.error('Error in POST /children/:childId/add-budget:', error);
-        res.status(500).json({ message: 'שגיאה בעדכון התקציב' });
+        console.error('Error updating budget:', error);
+        res.status(500).json({ message: 'שגיאת שרת' });
     }
 });
 
@@ -207,31 +214,17 @@ router.get('/:id/data', childAuth, async (req, res) => {
         const childId = req.params.id;
         
         const child = await Child.findById(childId)
-            .populate({
-                path: 'requests',
-                options: { sort: { 'createdAt': -1 } }
-            })
             .select('-password');
 
         if (!child) {
             return res.status(404).json({ message: 'הילד לא נמצא' });
         }
 
-        const requests = child.requests || [];
-
         res.json({
             name: child.name,
             monthlyAllowance: child.monthlyAllowance,
             remainingBudget: child.remainingBudget,
-            expenses: child.expenses || [],
-            requests: requests.map(req => ({
-                id: req._id,
-                amount: req.amount,
-                description: req.description,
-                status: req.status,
-                createdAt: req.createdAt,
-                responseMessage: req.responseMessage
-            }))
+            expenses: child.expenses || []
         });
     } catch (error) {
         console.error('Error in GET /children/:childId/data:', error);
@@ -250,6 +243,12 @@ router.post('/:childId/requests', childAuth, async (req, res) => {
             return res.status(400).json({ message: 'נא למלא את כל השדות' });
         }
 
+        // וידוא שהקטגוריה תקינה
+        const validCategories = ['משחקים', 'בגדים', 'ממתקים', 'צעצועים', 'ספרים', 'בילויים', 'אחר'];
+        if (!validCategories.includes(category)) {
+            return res.status(400).json({ message: 'קטגוריה לא תקינה' });
+        }
+
         // מציאת הילד
         const child = await Child.findById(childId);
         if (!child) {
@@ -258,7 +257,7 @@ router.post('/:childId/requests', childAuth, async (req, res) => {
 
         // יצירת בקשה חדשה
         const request = new Request({
-            childId: childId,
+            childId,
             amount: parseFloat(amount),
             description,
             category,
@@ -268,19 +267,12 @@ router.post('/:childId/requests', childAuth, async (req, res) => {
 
         // שמירת הבקשה
         await request.save();
-        
-        // הוספת הבקשה לרשימת הבקשות של הילד
-        if (!child.requests) {
-            child.requests = [];
-        }
-        child.requests.push(request._id);
-        await child.save();
 
         // החזרת תשובה
         res.status(201).json({
             message: 'הבקשה נשלחה בהצלחה',
             request: {
-                id: request._id,
+                _id: request._id,
                 amount: request.amount,
                 description: request.description,
                 category: request.category,
@@ -292,6 +284,33 @@ router.post('/:childId/requests', childAuth, async (req, res) => {
         console.error('Error in POST /children/:childId/requests:', error);
         res.status(500).json({ 
             message: 'שגיאה בשליחת הבקשה',
+            error: error.message 
+        });
+    }
+});
+
+// קבלת הבקשות של הילד
+router.get('/:childId/requests', childAuth, async (req, res) => {
+    try {
+        const childId = req.params.childId;
+
+        // מציאת כל הבקשות של הילד
+        const requests = await Request.find({ childId })
+            .sort({ createdAt: -1 });
+
+        res.json(requests.map(req => ({
+            _id: req._id,
+            amount: req.amount,
+            description: req.description,
+            category: req.category,
+            status: req.status,
+            createdAt: req.createdAt,
+            responseMessage: req.responseMessage
+        })));
+    } catch (error) {
+        console.error('Error in GET /children/:childId/requests:', error);
+        res.status(500).json({ 
+            message: 'שגיאה בקבלת הבקשות',
             error: error.message 
         });
     }
