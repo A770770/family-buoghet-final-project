@@ -161,50 +161,51 @@ const ChildDashboardPage: React.FC = () => {
     };
 
     if (!childData) {
-        return <div className="loading">טוען...</div>;
+        return <div className="loading" key="loading">טוען...</div>;
     }
 
     return (
-        <div className="child-dashboard-container">
-            <div className="dashboard-hero">
-                <div className="hero-content">
-                    <h1>שלום {childData.name}! 👋</h1>
-                    <div className="daily-tip">
-                        <div className="tip-bubble">
+        <div className="child-dashboard-container" key="dashboard-container">
+            <div className="dashboard-hero" key="dashboard-hero">
+                <div className="hero-content" key="hero-content">
+                    <h1 key="welcome-message">שלום {childData.name}! 👋</h1>
+                    <div className="daily-tip" key="daily-tip">
+                        <div className="tip-bubble" key="tip-bubble">
                             <FaPiggyBank className="tip-icon" />
-                            <p>{currentTip}</p>
+                            <p key="tip-text">{currentTip}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="stats-container">
-                <div className="stat-card monthly-budget">
-                    <div className="stat-icon">
+            <div className="stats-grid" key="stats-grid">
+                <div className="stat-card" key="monthly-allowance">
+                    <div className="stat-icon" key="monthly-allowance-icon">
                         <FaMoneyBillWave />
                     </div>
-                    <div className="stat-info">
-                        <h3>תקציב חודשי</h3>
-                        <p className="stat-value">₪{childData.monthlyAllowance.toLocaleString()}</p>
-                        <div className="stat-progress">
+                    <div className="stat-info" key="monthly-allowance-info">
+                        <h3 key="monthly-allowance-title">תקציב חודשי</h3>
+                        <p className="stat-value" key="monthly-allowance-value">₪{childData.monthlyAllowance.toLocaleString()}</p>
+                        <div className="stat-progress" key="monthly-allowance-progress">
                             <div 
                                 className="progress-bar" 
                                 style={{ 
                                     width: `${Math.min(100, (childData.remainingBudget / childData.monthlyAllowance) * 100)}%` 
                                 }}
+                                key="monthly-allowance-progress-bar"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="stat-card remaining-budget">
-                    <div className="stat-icon">
+                <div className="stat-card" key="remaining-budget">
+                    <div className="stat-icon" key="remaining-budget-icon">
                         <FaPiggyBank />
                     </div>
-                    <div className="stat-info">
-                        <h3>נשאר בתקציב</h3>
-                        <p className="stat-value">₪{childData.remainingBudget.toLocaleString()}</p>
-                        <p className="stat-subtitle">
+                    <div className="stat-info" key="remaining-budget-info">
+                        <h3 key="remaining-budget-title">נשאר בתקציב</h3>
+                        <p className="stat-value" key="remaining-budget-value">₪{childData.remainingBudget.toLocaleString()}</p>
+                        <p className="stat-subtitle" key="remaining-budget-subtitle">
                             {childData.remainingBudget > 0 ? 
                                 '🌟 מצוין! אתה חוסך יפה' : 
                                 '💡 אולי כדאי לחסוך קצת?'}
@@ -213,48 +214,49 @@ const ChildDashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="recent-activity">
-                <div className="section-title">
+            <div className="recent-activity" key="recent-activity">
+                <div className="section-title" key="section-title">
                     <FaHistory className="section-icon" />
-                    <h2>הבקשות האחרונות שלי</h2>
+                    <h2 key="section-title-text">הבקשות האחרונות שלי</h2>
                     <button 
                         className="new-request-btn"
                         onClick={() => setShowRequestModal(true)}
+                        key="new-request-btn"
                     >
                         <FaPlusCircle /> בקשה חדשה
                     </button>
                 </div>
 
-                <div className="activity-cards">
+                <div className="activity-cards" key="activity-cards">
                     {requests.map((request) => (
                         <div key={request.id} className={`activity-card ${request.status}`}>
-                            <div className="request-header">
+                            <div className="request-header" key={`${request.id}-header`}>
                                 {request.status === 'pending' && (
-                                    <div className="status-badge pending">
+                                    <div className="status-badge pending" key={`${request.id}-pending-badge`}>
                                         <FaHourglassHalf /> ממתין לאישור
                                     </div>
                                 )}
                                 {request.status === 'approved' && (
-                                    <div className="status-badge approved">
+                                    <div className="status-badge approved" key={`${request.id}-approved-badge`}>
                                         <FaCheckCircle /> אושר
                                     </div>
                                 )}
                                 {request.status === 'rejected' && (
-                                    <div className="status-badge rejected">
+                                    <div className="status-badge rejected" key={`${request.id}-rejected-badge`}>
                                         <FaTimesCircle /> נדחה
                                     </div>
                                 )}
-                                <span className="request-date">
+                                <span className="request-date" key={`${request.id}-date`}>
                                     {new Date(request.createdAt).toLocaleDateString('he-IL')}
                                 </span>
                             </div>
-                            <div className="request-amount">₪{request.amount.toLocaleString()}</div>
-                            <div className="request-category">
-                                <span className="category-tag">{request.category}</span>
+                            <div className="request-amount" key={`${request.id}-amount`}>₪{request.amount.toLocaleString()}</div>
+                            <div className="request-category" key={`${request.id}-category`}>
+                                <span className="category-tag" key={`${request.id}-category-tag`}>{request.category}</span>
                             </div>
-                            <p className="request-description">{request.description}</p>
+                            <p className="request-description" key={`${request.id}-description`}>{request.description}</p>
                             {request.responseMessage && (
-                                <div className="response-message">
+                                <div className="response-message" key={`${request.id}-response`}>
                                     <FaComment className="message-icon" />
                                     {request.responseMessage}
                                 </div>
@@ -262,12 +264,13 @@ const ChildDashboardPage: React.FC = () => {
                         </div>
                     ))}
                     {(!requests || requests.length === 0) && (
-                        <div className="empty-state">
+                        <div className="empty-state" key="empty-state">
                             <FaFileAlt className="empty-icon" />
-                            <p>עדיין אין לך בקשות</p>
+                            <p key="empty-state-text">עדיין אין לך בקשות</p>
                             <button 
                                 className="create-first-btn"
                                 onClick={() => setShowRequestModal(true)}
+                                key="create-first-btn"
                             >
                                 צור בקשה ראשונה
                             </button>
@@ -277,45 +280,50 @@ const ChildDashboardPage: React.FC = () => {
             </div>
 
             {showRequestModal && (
-                <div className="modal">
-                    <div className="modal-content">
-                        <h2>בקשה חדשה</h2>
-                        <form onSubmit={handleSubmitRequest}>
-                            <div className="form-group">
-                                <label>סכום (₪)</label>
+                <div className="modal" key="modal">
+                    <div className="modal-content" key="modal-content">
+                        <h2 key="modal-title">בקשה חדשה</h2>
+                        <form onSubmit={handleSubmitRequest} key="request-form">
+                            <div className="form-group" key="amount-group">
+                                <label key="amount-label">סכום (₪)</label>
                                 <input
                                     type="number"
                                     value={requestAmount}
                                     onChange={(e) => setRequestAmount(e.target.value)}
                                     min="0"
                                     required
+                                    key="amount-input"
                                 />
                             </div>
-                            <div className="form-group">
-                                <label>קטגוריה</label>
+                            <div className="form-group" key="category-group">
+                                <label key="category-label">קטגוריה</label>
                                 <select
                                     value={requestCategory}
                                     onChange={(e) => setRequestCategory(e.target.value)}
                                     required
+                                    key="category-select"
                                 >
-                                    {categories.map(category => (
-                                        <option key={category} value={category}>{category}</option>
+                                    {categories.map((category) => (
+                                        <option key={category} value={category}>
+                                            {category}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
-                            <div className="form-group">
-                                <label>תיאור</label>
+                            <div className="form-group" key="description-group">
+                                <label key="description-label">תיאור</label>
                                 <textarea
                                     value={requestDescription}
                                     onChange={(e) => setRequestDescription(e.target.value)}
                                     required
+                                    key="description-textarea"
                                 />
                             </div>
-                            <div className="modal-buttons">
-                                <button type="submit" disabled={loading}>
+                            <div className="modal-buttons" key="modal-buttons">
+                                <button type="submit" disabled={loading} key="submit-btn">
                                     {loading ? 'שולח...' : 'שלח בקשה'}
                                 </button>
-                                <button type="button" onClick={() => setShowRequestModal(false)}>
+                                <button type="button" onClick={() => setShowRequestModal(false)} key="cancel-btn">
                                     ביטול
                                 </button>
                             </div>

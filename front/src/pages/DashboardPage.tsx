@@ -93,47 +93,6 @@ const DashboardPage: React.FC = () => {
         fetchData();
     }, [navigate]);
 
-    useEffect(() => {
-        const checkNewRequests = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                
-                const response = await axios.get(
-                    `http://localhost:5004/api/parents/pending-requests`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
-                );
-
-                const pendingRequests = response.data;
-                
-                if (pendingRequests.length > 0) {
-                    toast.info(
-                        <div>
-                            <h4>יש בקשות חדשות מהילדים שלך!</h4>
-                            <p>לחץ כאן לצפייה בבקשות</p>
-                        </div>,
-                        {
-                            onClick: () => navigate('/manage-children'),
-                            autoClose: false
-                        }
-                    );
-                }
-            } catch (error) {
-                console.error('Error checking new requests:', error);
-            }
-        };
-
-        // בדוק בקשות רק אם המשתמש הוא הורה
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'parent') {
-            checkNewRequests();
-            // בדיקה כל 5 דקות
-            const interval = setInterval(checkNewRequests, 5 * 60 * 1000);
-            return () => clearInterval(interval);
-        }
-    }, [navigate]);
-
     const handleLogout = () => {
         localStorage.clear();
         navigate('/login');
@@ -213,9 +172,6 @@ const DashboardPage: React.FC = () => {
                                 </Link>
                                 {userInfo?.role === 'parent' && (
                                     <>
-                                        <Link to="/requests" className="menu-item requests" onClick={() => setShowHamburgerMenu(false)}>
-                                            <FaMoneyBillWave /> בקשות ממתינות
-                                        </Link>
                                         <Link to="/children" className="menu-item children" onClick={() => setShowHamburgerMenu(false)}>
                                             <FaChild /> ניהול ילדים
                                         </Link>

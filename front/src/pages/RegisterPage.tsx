@@ -37,7 +37,7 @@ const RegisterPage: React.FC = () => {
 
         try {
             setIsLoading(true);
-            const response = await axios.post('http://localhost:5004/api/auth/register', {
+            const response = await axios.post('http://localhost:5004/api/auth/signup', {
                 username: formData.username,
                 email: formData.email,
                 password: formData.password,
@@ -48,7 +48,7 @@ const RegisterPage: React.FC = () => {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('userId', response.data.user.id);
                 localStorage.setItem('username', response.data.user.username);
-                localStorage.setItem('role', 'parent');
+                localStorage.setItem('userRole', 'parent');
                 
                 navigate('/dashboard');
                 toast.success('נרשמת בהצלחה!');

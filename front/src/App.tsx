@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import RequestPage from './pages/RequestPage';
 import AddExpensePage from './pages/AddExpensePage';
 import AddIncomePage from './pages/AddIncomePage';
 import PrivateRoute from './components/PrivateRoute';
@@ -30,7 +29,6 @@ const App: React.FC = () => {
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/requests" element={<RequestPage />} />
           <Route path="/expenses/add" element={<AddExpensePage />} />
           <Route path="/income/add" element={<AddIncomePage />} />
           <Route path="/expenses/fixed" element={<FixedExpensesPage />} />

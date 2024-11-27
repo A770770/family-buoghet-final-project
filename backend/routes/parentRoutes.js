@@ -10,19 +10,24 @@ router.get('/pending-requests', auth, async (req, res) => {
     try {
         const parentId = req.user.id;
 
-        // מצא את ההורה ואת הילדים שלו
-        const parent = await User.findById(parentId);
-        if (!parent || parent.role !== 'parent') {
-            return res.status(404).json({ message: 'הורה לא נמצא' });
+        // בדיקת הרשאות
+        if (!req.user.role || req.user.role !== 'parent') {
+            return res.status(403).json({ message: 'אין הרשאת גישה - נדרשת הרשאת הורה' });
         }
 
-        console.log("parent:", parent);
+        // מצא את ההורה
+        const parent = await User.findById(parentId);
+        if (!parent) {
+            return res.status(404).json({ message: 'משתמש לא נמצא' });
+        }
 
         // מצא את כל הילדים של ההורה
         const children = await Child.find({ parent: parentId });
-        const childIds = children.map(child => child._id);
+        if (!children.length) {
+            return res.json([]); // אם אין ילדים, מחזיר מערך ריק
+        }
 
-        console.log("childIds:", childIds);
+        const childIds = children.map(child => child._id);
 
         // מצא את כל הבקשות הממתינות מהילדים של ההורה
         const pendingRequests = await Request.find({
@@ -32,9 +37,22 @@ router.get('/pending-requests', auth, async (req, res) => {
         .populate('childId', 'name')
         .sort({ createdAt: -1 });
 
-        console.log(pendingRequests);
+        // הוסף את זמן ההמתנה לכל בקשה
+        const requestsWithWaitingTime = pendingRequests.map(request => {
+            const waitingTime = Math.floor((Date.now() - new Date(request.createdAt).getTime()) / 1000 / 60); // בדקות
+            return {
+                id: request._id,
+                childId: request.childId,
+                amount: request.amount,
+                description: request.description,
+                category: request.category,
+                status: request.status,
+                createdAt: request.createdAt,
+                waitingTime
+            };
+        });
 
-        res.json(pendingRequests);
+        res.json(requestsWithWaitingTime);
     } catch (error) {
         console.error('Error in getting pending requests:', error);
         res.status(500).json({ message: 'שגיאת שרת' });
