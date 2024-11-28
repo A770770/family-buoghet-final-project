@@ -344,47 +344,100 @@
 /* Expenses List */
 .expenses-list {
     display: grid;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1rem;
 }
 
 .expense-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 10px;
-    transition: all 0.3s ease;
+    background: white;
+    border-radius: 12px;
+    padding: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border: 1px solid #eef2f7;
+    transition: all 0.3s ease;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.5rem;
 }
 
 .expense-card:hover {
-    transform: translateX(-5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-right: 4px solid #2193b0;
 }
 
+.expense-details {
+    grid-column: 1;
+    grid-row: 1;
+}
+
 .expense-details h4 {
+    margin: 0 0 0.5rem 0;
     color: #2d3436;
     font-size: 1.1rem;
-    margin-bottom: 0.3rem;
+    font-weight: 600;
 }
 
 .expense-details .category {
     color: #2193b0;
     font-size: 0.9rem;
-    font-weight: 500;
+    margin: 0;
 }
 
 .expense-amount {
+    grid-column: 2;
+    grid-row: 1;
     font-size: 1.2rem;
     font-weight: bold;
     color: #2193b0;
+    text-align: left;
+    margin: 0;
 }
 
 .expense-date {
+    grid-column: 1 / -1;
+    grid-row: 2;
     color: #95a5a6;
     font-size: 0.9rem;
+    margin: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f0f3f7;
+}
+
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef2f7;
+}
+
+.search-icon {
+    color: #2193b0;
+}
+
+.category-select {
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    color: #2d3436;
+    padding: 0.3rem;
+    background: transparent;
+    cursor: pointer;
+}
+
+.no-expenses {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    color: #95a5a6;
 }
 
 /* Category Filter */

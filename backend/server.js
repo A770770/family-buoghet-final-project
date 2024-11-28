@@ -6,9 +6,10 @@ require('dotenv').config();
 const app = express();
 const cors = require('cors');
 const server = http.createServer(app);
+const connectDB = require('./db/index');
+
 const authRoutes = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboard');
-const connectDB = require('./db/index');
 const incomeRoutes = require('./routes/income');
 const expenseRoutes = require('./routes/expenseRoutes');
 const childRoutes = require('./routes/childRoutes');

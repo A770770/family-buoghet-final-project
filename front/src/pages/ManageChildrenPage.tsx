@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import '../styles/ManageChildrenPage.css';
-import { FaChild, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaChild, FaCheckCircle, FaTimesCircle, FaHome } from 'react-icons/fa';
 
 interface Child {
     _id: string;
@@ -22,6 +23,7 @@ interface Request {
 }
 
 const ManageChildrenPage: React.FC = () => {
+    const navigate = useNavigate();
     const [children, setChildren] = useState<Child[]>([]);
     const [showAddChildModal, setShowAddChildModal] = useState(false);
     const [newChildName, setNewChildName] = useState('');
@@ -102,7 +104,28 @@ const ManageChildrenPage: React.FC = () => {
     };
 
     return (
-        <div className="manage-children-page">
+        <div className="manage-children-container">
+            <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+            >
+                <FaHome size={24} />
+            </button>
             <div className="page-header">
                 <h1>ניהול ילדים</h1>
                 <button className="add-child-button" onClick={() => setShowAddChildModal(true)}>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope, FaTrash, FaMinus, FaBell } from 'react-icons/fa';
+import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope, FaTrash, FaMinus, FaBell, FaHome } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/ChildrenManagementPage.css';
+import { useNavigate } from 'react-router-dom';
 
 interface Request {
     id: string;
@@ -32,6 +33,7 @@ interface Child {
 const API_URL = 'http://localhost:5004';
 
 const ChildrenManagementPage: React.FC = () => {
+    const navigate = useNavigate();
     const [children, setChildren] = useState<Child[]>([]);
     const [selectedChild, setSelectedChild] = useState<string | null>(null);
     const [showAddChildModal, setShowAddChildModal] = useState(false);
@@ -240,6 +242,27 @@ const ChildrenManagementPage: React.FC = () => {
 
     return (
         <div className="children-management-page">
+            <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+            >
+                <FaHome size={24} />
+            </button>
             <h1>ניהול ילדים</h1>
             <button className="add-child-button" onClick={() => setShowAddChildModal(true)}>
                 <FaPlus /> הוסף ילד

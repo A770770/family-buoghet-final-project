@@ -171,13 +171,20 @@ const DashboardPage: React.FC = () => {
         }, 500);
     };
 
-    const filteredExpenses = data?.recentExpenses.filter(expense => 
+    // איחוד כל הקטגוריות מההוצאות הקבועות והרגילות
+    const allCategories = Array.from(
+        new Set([
+            ...(data?.expensesByCategory?.filter(exp => !exp.isRecurring).map(exp => exp.category) || []),
+            ...(data?.expensesByCategory?.filter(exp => exp.isRecurring).map(exp => exp.category) || [])
+        ])
+    );
+
+    const filteredExpenses = data?.recentExpenses?.filter(expense => 
         selectedCategory === 'all' || expense.category === selectedCategory
     ) || [];
 
-    const categories = Array.from(
-        new Set(data?.recentExpenses.map(expense => expense.category) || [])
-    );
+    const nonRecurringExpenses = data?.expensesByCategory?.filter(exp => !exp.isRecurring) || [];
+    const recurringExpenses = data?.expensesByCategory?.filter(exp => exp.isRecurring) || [];
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -186,9 +193,6 @@ const DashboardPage: React.FC = () => {
     if (loading) return <div className="loading">טוען...</div>;
     if (error) return <div className="error">{error}</div>;
     if (!data) return <div className="error">לא נמצאו נתונים</div>;
-
-    const nonRecurringExpenses = data.expensesByCategory.filter(exp => !exp.isRecurring);
-    const recurringExpenses = data.expensesByCategory.filter(exp => exp.isRecurring);
 
     return (
         <div className="dashboard-container">
@@ -312,7 +316,7 @@ const DashboardPage: React.FC = () => {
                     <ResponsiveContainer width="100%" height={400}>
                         <PieChart>
                             <defs>
-                                {nonRecurringExpenses.map((_, index) => (
+                                {nonRecurringExpenses?.map((_, index) => (
                                     <linearGradient
                                         key={`gradient-${index}`}
                                         id={`gradient-${index}`}
@@ -346,7 +350,7 @@ const DashboardPage: React.FC = () => {
                                 }
                                 labelLine={true}
                             >
-                                {nonRecurringExpenses.map((_, index) => (
+                                {nonRecurringExpenses?.map((_, index) => (
                                     <Cell 
                                         key={`cell-${index}`}
                                         fill={`url(#gradient-${index})`}
@@ -367,7 +371,7 @@ const DashboardPage: React.FC = () => {
                     <div className="chart-total">
                         <span>סה״כ הוצאות שוטפות:</span>
                         <span className="total-amount">
-                            ₪{nonRecurringExpenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
+                            ₪{nonRecurringExpenses?.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
                         </span>
                     </div>
                 </div>
@@ -377,7 +381,7 @@ const DashboardPage: React.FC = () => {
                     <ResponsiveContainer width="100%" height={400}>
                         <PieChart>
                             <defs>
-                                {recurringExpenses.map((_, index) => (
+                                {recurringExpenses?.map((_, index) => (
                                     <linearGradient
                                         key={`gradient-recurring-${index}`}
                                         id={`gradient-recurring-${index}`}
@@ -411,7 +415,7 @@ const DashboardPage: React.FC = () => {
                                 }
                                 labelLine={true}
                             >
-                                {recurringExpenses.map((_, index) => (
+                                {recurringExpenses?.map((_, index) => (
                                     <Cell 
                                         key={`cell-recurring-${index}`}
                                         fill={`url(#gradient-recurring-${index})`}
@@ -432,7 +436,7 @@ const DashboardPage: React.FC = () => {
                     <div className="chart-total">
                         <span>סה״כ הוצאות קבועות:</span>
                         <span className="total-amount">
-                            ₪{recurringExpenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
+                            ₪{recurringExpenses?.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
                         </span>
                     </div>
                 </div>
@@ -449,7 +453,7 @@ const DashboardPage: React.FC = () => {
                             className="category-select"
                         >
                             <option value="all">כל הקטגוריות</option>
-                            {categories.map(category => (
+                            {allCategories.map(category => (
                                 <option key={category} value={category}>
                                     {category}
                                 </option>
@@ -462,7 +466,7 @@ const DashboardPage: React.FC = () => {
                     {filteredExpenses.map((expense) => (
                         <div key={expense._id} className="expense-card">
                             <div className="expense-details">
-                                <h4>{expense.description}</h4>
+                                <h4>{expense.description || 'הוצאה'}</h4>
                                 <p className="category">{expense.category}</p>
                             </div>
                             <div className="expense-amount">
@@ -473,6 +477,11 @@ const DashboardPage: React.FC = () => {
                             </div>
                         </div>
                     ))}
+                    {filteredExpenses.length === 0 && (
+                        <div className="no-expenses">
+                            <p>לא נמצאו הוצאות בקטגוריה זו</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
