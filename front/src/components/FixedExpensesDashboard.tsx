@@ -17,14 +17,59 @@ interface FixedExpense {
 interface CategoryTotal {
   category: string;
   amount: number;
+  originalCategory: string;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
+
+// מיפוי קטגוריות לעברית
+const FIXED_EXPENSE_CATEGORIES = [
+  // דיור
+  { value: 'rent', label: 'שכר דירה' },
+  { value: 'mortgage', label: 'משכנתא' },
+  { value: 'building_maintenance', label: 'ועד בית ותחזוקה' },
+  
+  // חשבונות שוטפים
+  { value: 'electricity', label: 'חשמל' },
+  { value: 'water', label: 'מים' },
+  { value: 'property_tax', label: 'ארנונה' },
+  { value: 'gas', label: 'גז' },
+  
+  // תקשורת
+  { value: 'phone', label: 'טלפון נייד' },
+  { value: 'internet', label: 'אינטרנט וטלוויזיה' },
+  
+  // ביטוחים
+  { value: 'car_insurance', label: 'ביטוח רכב' },
+  { value: 'health_insurance', label: 'ביטוח בריאות' },
+  { value: 'life_insurance', label: 'ביטוח חיים' },
+  { value: 'home_insurance', label: 'ביטוח דירה' },
+  
+  // הלוואות ותשלומים
+  { value: 'car_loan', label: 'תשלום רכב' },
+  { value: 'personal_loan', label: 'הלוואה אישית' },
+  
+  // מנויים וחברויות
+  { value: 'gym', label: 'חדר כושר וספורט' },
+  { value: 'subscriptions', label: 'מנויים דיגיטליים' },
+  { value: 'clubs', label: 'חוגים ופנאי' },
+  
+  // חינוך
+  { value: 'education', label: 'חינוך ולימודים' },
+  { value: 'daycare', label: 'מעון/צהרון' },
+  
+  // אחר
+  { value: 'other', label: 'הוצאות קבועות אחרות' }
+];
 
 export const FixedExpensesDashboard: React.FC = () => {
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
+
+  const getCategoryLabel = (category: string): string => {
+    return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.label || category;
+  };
 
   useEffect(() => {
     const fetchFixedExpenses = async () => {
@@ -48,7 +93,8 @@ export const FixedExpensesDashboard: React.FC = () => {
         });
 
         const totals = Array.from(categoryMap.entries()).map(([category, amount]) => ({
-          category,
+          category: getCategoryLabel(category),
+          originalCategory: category,
           amount
         }));
 
@@ -91,7 +137,7 @@ export const FixedExpensesDashboard: React.FC = () => {
               cy="50%"
               outerRadius={80}
               fill="#8884d8"
-              label={(entry) => `${entry.category}: ${formatNumber(entry.amount)}`}
+              label={({ category, amount }) => `${category}: ${formatNumber(amount)}`}
             >
               {categoryTotals.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -99,7 +145,7 @@ export const FixedExpensesDashboard: React.FC = () => {
             </Pie>
             <Tooltip
               formatter={(value: number) => formatNumber(value)}
-              labelFormatter={(label) => `קטגוריה: ${label}`}
+              labelFormatter={(category) => `קטגוריה: ${category}`}
             />
           </PieChart>
         </ResponsiveContainer>

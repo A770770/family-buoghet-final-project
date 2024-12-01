@@ -28,14 +28,42 @@ interface NewExpense {
 }
 
 const FIXED_EXPENSE_CATEGORIES = [
+  // דיור
   { value: 'rent', label: 'שכר דירה' },
   { value: 'mortgage', label: 'משכנתא' },
-  { value: 'utilities', label: 'חשבונות' },
-  { value: 'insurance', label: 'ביטוח' },
-  { value: 'phone', label: 'טלפון' },
-  { value: 'internet', label: 'אינטרנט' },
-  { value: 'car', label: 'רכב' },
-  { value: 'other', label: 'אחר' }
+  { value: 'building_maintenance', label: 'ועד בית ותחזוקה' },
+  
+  // חשבונות שוטפים
+  { value: 'electricity', label: 'חשמל' },
+  { value: 'water', label: 'מים' },
+  { value: 'property_tax', label: 'ארנונה' },
+  { value: 'gas', label: 'גז' },
+  
+  // תקשורת
+  { value: 'phone', label: 'טלפון נייד' },
+  { value: 'internet', label: 'אינטרנט וטלוויזיה' },
+  
+  // ביטוחים
+  { value: 'car_insurance', label: 'ביטוח רכב' },
+  { value: 'health_insurance', label: 'ביטוח בריאות' },
+  { value: 'life_insurance', label: 'ביטוח חיים' },
+  { value: 'home_insurance', label: 'ביטוח דירה' },
+  
+  // הלוואות ותשלומים
+  { value: 'car_loan', label: 'תשלום רכב' },
+  { value: 'personal_loan', label: 'הלוואה אישית' },
+  
+  // מנויים וחברויות
+  { value: 'gym', label: 'חדר כושר וספורט' },
+  { value: 'subscriptions', label: 'מנויים דיגיטליים' },
+  { value: 'clubs', label: 'חוגים ופנאי' },
+  
+  // חינוך
+  { value: 'education', label: 'חינוך ולימודים' },
+  { value: 'daycare', label: 'מעון/צהרון' },
+  
+  // אחר
+  { value: 'other', label: 'הוצאות קבועות אחרות' }
 ];
 
 export const FixedExpensesPage: React.FC = () => {
@@ -110,7 +138,7 @@ export const FixedExpensesPage: React.FC = () => {
       const expenseData = {
         amount: numericAmount,
         category: newExpense.category,
-        description: `הוצאה קבועה - ${FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === newExpense.category)?.label}`,
+        description: FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === newExpense.category)?.label || 'הוצאה קבועה',
         isRecurring: true,
         recurringDetails: {
           frequency: newExpense.recurringDetails.frequency,

@@ -576,8 +576,8 @@
 
 /* User Button */
 .user-button {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: #ffffff;
+    border: none;
     border-radius: 50%;
     width: 45px;
     height: 45px;
@@ -586,11 +586,15 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
+    color: #2193b0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .user-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
+    background: #f8f9fa;
+    color: #1a7a8c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* User Menu */
@@ -609,17 +613,23 @@
 
 .user-info {
     padding: 1.5rem;
-    background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
-    color: white;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .user-info p {
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
+    margin: 0.8rem 0;
+    font-size: 1rem;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
 }
 
 .user-info strong {
+    color: #2193b0;
     font-weight: 600;
+    min-width: 70px;
 }
 
 .logout-button {
@@ -634,10 +644,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 500;
-}
-
-.logout-button svg {
-    margin-left: 8px;
+    gap: 0.5rem;
 }
 
 .logout-button:hover {

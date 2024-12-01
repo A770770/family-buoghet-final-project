@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/DashboardPage.css';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank, FaChild, FaLightbulb } from 'react-icons/fa';
+import { FaUser, FaSearch, FaBars, FaCog, FaSignOutAlt, FaHistory, FaPlusCircle, FaMoneyBillWave, FaPiggyBank, FaChild, FaLightbulb, FaUtensils, FaShoppingCart, FaCar, FaGamepad, FaGift, FaTshirt } from 'react-icons/fa';
 import { FiMenu, FiUser, FiLogOut, FiSettings, FiPieChart, FiDollarSign } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -57,6 +57,17 @@ const savingTips = [
     "📊 טיפ: עקוב אחר ההוצאות השוטפות שלך באופן קבוע",
     "🏠 טיפ: בדוק אפשרויות לחסוך בהוצאות הקבועות כמו חשמל ומים"
 ];
+
+// הוספת מיפוי קטגוריות
+const CATEGORY_MAPPING = {
+    'food': 'מזון',
+    'shopping': 'קניות',
+    'transportation': 'תחבורה',
+    'entertainment': 'בידור',
+    'gifts': 'מתנות',
+    'clothing': 'ביגוד',
+    'other': 'אחר'
+};
 
 const DashboardPage: React.FC = () => {
     const navigate = useNavigate();
@@ -337,7 +348,10 @@ const DashboardPage: React.FC = () => {
                                 ))}
                             </defs>
                             <Pie
-                                data={nonRecurringExpenses}
+                                data={nonRecurringExpenses.map(expense => ({
+                                    ...expense,
+                                    category: CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category
+                                }))}
                                 dataKey="amount"
                                 nameKey="category"
                                 cx="50%"
@@ -402,7 +416,10 @@ const DashboardPage: React.FC = () => {
                                 ))}
                             </defs>
                             <Pie
-                                data={recurringExpenses}
+                                data={recurringExpenses.map(expense => ({
+                                    ...expense,
+                                    category: CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category
+                                }))}
                                 dataKey="amount"
                                 nameKey="category"
                                 cx="50%"
@@ -455,7 +472,7 @@ const DashboardPage: React.FC = () => {
                             <option value="all">כל הקטגוריות</option>
                             {allCategories.map(category => (
                                 <option key={category} value={category}>
-                                    {category}
+                                    {CATEGORY_MAPPING[category as keyof typeof CATEGORY_MAPPING] || category}
                                 </option>
                             ))}
                         </select>
@@ -467,7 +484,7 @@ const DashboardPage: React.FC = () => {
                         <div key={expense._id} className="expense-card">
                             <div className="expense-details">
                                 <h4>{expense.description || 'הוצאה'}</h4>
-                                <p className="category">{expense.category}</p>
+                                <p className="category">{CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category}</p>
                             </div>
                             <div className="expense-amount">
                                 ₪{expense.amount.toLocaleString()}

@@ -220,7 +220,14 @@ const ChildrenManagementPage: React.FC = () => {
             );
             
             // עדכון הילד הספציפי עם הנתונים החדשים
-            const { child: updatedChild } = response.data;
+            const { child: updatedChild, request } = response.data;
+
+            // אם הבקשה אושרה, פתח את קישור התשלום של PayPal
+            if (action === 'approve' && request?.amount) {
+                const paypalLink = `https://www.paypal.com/paypalme/my/settings?flow=cmV0dXJuVXJsPWh0dHBzJTNBJTJGJTJGd3d3LnBheXBhbC5jb20lMkZteWFjY291bnQlMkZ0cmFuc2ZlciUzRmNtZCUzRHhmZXI/amount=${request.amount}`;
+                window.open(paypalLink, '_blank');
+            }
+            
             setChildren(prevChildren => 
                 prevChildren.map(child => 
                     child._id === updatedChild._id 
