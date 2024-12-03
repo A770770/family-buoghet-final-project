@@ -58,7 +58,18 @@ const savingTips = [
     "🏠 טיפ: בדוק אפשרויות לחסוך בהוצאות הקבועות כמו חשמל ומים"
 ];
 
-// הוספת מיפוי קטגוריות
+// קטגוריות להוצאות שוטפות
+const EXPENSE_CATEGORIES = [
+    { value: 'מזון', label: 'מזון' },
+    { value: 'קניות', label: 'קניות' },
+    { value: 'תחבורה', label: 'תחבורה' },
+    { value: 'בידור', label: 'בידור' },
+    { value: 'מתנות', label: 'מתנות' },
+    { value: 'ביגוד', label: 'ביגוד' },
+    { value: 'אחר', label: 'אחר' }
+];
+
+// מיפוי קטגוריות (לתאימות עם נתונים קיימים)
 const CATEGORY_MAPPING = {
     'food': 'מזון',
     'shopping': 'קניות',
@@ -67,6 +78,10 @@ const CATEGORY_MAPPING = {
     'gifts': 'מתנות',
     'clothing': 'ביגוד',
     'other': 'אחר'
+};
+
+const getHebrewCategory = (category: string) => {
+    return CATEGORY_MAPPING[category as keyof typeof CATEGORY_MAPPING] || category;
 };
 
 const DashboardPage: React.FC = () => {
@@ -151,23 +166,11 @@ const DashboardPage: React.FC = () => {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5000);
 
-        // בחירת טיפ רנדומלי והצגתו
+        // בחירת טיפ רנדומלי והצגתו בכניסה לדף
         const randomTip = savingTips[Math.floor(Math.random() * savingTips.length)];
         setCurrentTip(randomTip);
         setShowTip(true);
         setTipState('entering');
-
-        // החלפת טיפים כל 10 שניות
-        const tipInterval = setInterval(() => {
-            setTipState('exiting');
-            setTimeout(() => {
-                const newTip = savingTips[Math.floor(Math.random() * savingTips.length)];
-                setCurrentTip(newTip);
-                setTipState('entering');
-            }, 500);
-        }, 10000);
-
-        return () => clearInterval(tipInterval);
     }, []);
 
     const handleLogout = () => {
@@ -190,16 +193,36 @@ const DashboardPage: React.FC = () => {
         ])
     );
 
-    const filteredExpenses = data?.recentExpenses?.filter(expense => 
-        selectedCategory === 'all' || expense.category === selectedCategory
-    ) || [];
+    // סינון הוצאות לפי קטגוריה
+    const filteredExpenses = data?.recentExpenses?.filter(expense => {
+        const hebrewCategory = getHebrewCategory(expense.category);
+        return selectedCategory === 'all' || hebrewCategory === selectedCategory;
+    }) || [];
 
-    const nonRecurringExpenses = data?.expensesByCategory?.filter(exp => !exp.isRecurring) || [];
-    const recurringExpenses = data?.expensesByCategory?.filter(exp => exp.isRecurring) || [];
+    // הוצאות לגרפים
+    const nonRecurringExpenses = data?.expensesByCategory?.filter(exp => !exp.isRecurring).map(exp => ({
+        ...exp,
+        category: getHebrewCategory(exp.category),
+        name: getHebrewCategory(exp.category)
+    })) || [];
+
+    const recurringExpenses = data?.expensesByCategory?.filter(exp => exp.isRecurring).map(exp => ({
+        ...exp,
+        category: getHebrewCategory(exp.category),
+        name: getHebrewCategory(exp.category)
+    })) || [];
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
+
+    // עדכון הנתונים לגרף עם קטגוריות בעברית
+    const chartData = data?.expensesByCategory?.map(expense => ({
+        ...expense,
+        category: getHebrewCategory(expense.category),
+        name: getHebrewCategory(expense.category),
+        value: expense.amount
+    })) || [];
 
     if (loading) return <div className="loading">טוען...</div>;
     if (error) return <div className="error">{error}</div>;
@@ -348,12 +371,9 @@ const DashboardPage: React.FC = () => {
                                 ))}
                             </defs>
                             <Pie
-                                data={nonRecurringExpenses.map(expense => ({
-                                    ...expense,
-                                    category: CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category
-                                }))}
-                                dataKey="amount"
-                                nameKey="category"
+                                data={chartData.filter(expense => !expense.isRecurring)}
+                                dataKey="value"
+                                nameKey="name"
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={80}
@@ -416,12 +436,9 @@ const DashboardPage: React.FC = () => {
                                 ))}
                             </defs>
                             <Pie
-                                data={recurringExpenses.map(expense => ({
-                                    ...expense,
-                                    category: CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category
-                                }))}
-                                dataKey="amount"
-                                nameKey="category"
+                                data={chartData.filter(expense => expense.isRecurring)}
+                                dataKey="value"
+                                nameKey="name"
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={80}
@@ -459,46 +476,42 @@ const DashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="recent-expenses-section">
+            <div className="recent-expenses">
                 <div className="section-header">
                     <h3>הוצאות אחרונות</h3>
                     <div className="category-filter">
-                        <FaSearch className="search-icon" />
-                        <select
-                            value={selectedCategory}
+                        <select 
+                            value={selectedCategory} 
                             onChange={(e) => setSelectedCategory(e.target.value)}
                             className="category-select"
                         >
                             <option value="all">כל הקטגוריות</option>
-                            {allCategories.map(category => (
-                                <option key={category} value={category}>
-                                    {CATEGORY_MAPPING[category as keyof typeof CATEGORY_MAPPING] || category}
+                            {EXPENSE_CATEGORIES.map(category => (
+                                <option key={category.value} value={category.value}>
+                                    {category.label}
                                 </option>
                             ))}
                         </select>
                     </div>
                 </div>
-
                 <div className="expenses-list">
-                    {filteredExpenses.map((expense) => (
-                        <div key={expense._id} className="expense-card">
-                            <div className="expense-details">
-                                <h4>{expense.description || 'הוצאה'}</h4>
-                                <p className="category">{CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category}</p>
+                    {filteredExpenses.map((expense) => {
+                        const hebrewCategory = getHebrewCategory(expense.category);
+                        return (
+                            <div key={expense._id} className="expense-card">
+                                <div className="expense-details">
+                                    <h4>{expense.description}</h4>
+                                    <span className={`category category-${hebrewCategory}`}>
+                                        {hebrewCategory}
+                                    </span>
+                                </div>
+                                <p className="expense-amount">₪{expense.amount.toLocaleString()}</p>
+                                <p className="expense-date">
+                                    {new Date(expense.date).toLocaleDateString('he-IL')}
+                                </p>
                             </div>
-                            <div className="expense-amount">
-                                ₪{expense.amount.toLocaleString()}
-                            </div>
-                            <div className="expense-date">
-                                {new Date(expense.date).toLocaleDateString('he-IL')}
-                            </div>
-                        </div>
-                    ))}
-                    {filteredExpenses.length === 0 && (
-                        <div className="no-expenses">
-                            <p>לא נמצאו הוצאות בקטגוריה זו</p>
-                        </div>
-                    )}
+                        );
+                    })}
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Alert = require('../models/Alert');
 const Budget = require('../models/Budget');
 const Expense = require('../models/Expense');
+const Income = require('../models/Income'); // Added Income model
 const { refreshDashboardInternal } = require('./dashboardController');
 
 exports.createRequest = async (req, res) => {
@@ -105,24 +106,39 @@ exports.respondToRequest = async (req, res) => {
         }
 
         if (status === 'approved') {
-            const budget = await Budget.findOne({ userId: parentId });
-            if (!budget) {
-                return res.status(400).json({ error: 'לא נמצא תקציב' });
-            }
-
-            if (budget.amount < request.amount) {
+            // בדיקת תקציב ההורה
+            const parentBudget = await Budget.findOne({ userId: parentId });
+            if (!parentBudget || parentBudget.amount < request.amount) {
                 return res.status(400).json({ error: 'אין מספיק כסף בתקציב' });
             }
 
-            budget.amount -= request.amount;
-            await budget.save();
+            // עדכון תקציב ההורה
+            parentBudget.amount -= request.amount;
+            await parentBudget.save();
 
-            // יצירת הוצאה חדשה
+            // עדכון תקציב הילד
+            const child = await User.findById(request.childId);
+            if (!child) {
+                return res.status(404).json({ error: 'לא נמצא משתמש ילד' });
+            }
+            child.remainingBudget = (child.remainingBudget || 0) + request.amount;
+            await child.save();
+
+            // יצירת הוצאה להורה
             await Expense.create({
                 userId: parentId,
                 amount: request.amount,
                 category: 'העברה לילד',
-                description: `העברה ל${request.childId.username}: ${request.description}`,
+                description: `העברה ל${child.username}: ${request.description}`,
+                date: new Date()
+            });
+
+            // יצירת הכנסה לילד
+            await Income.create({
+                userId: request.childId,
+                amount: request.amount,
+                source: 'הורה',
+                description: `העברה מהורה: ${request.description}`,
                 date: new Date()
             });
 

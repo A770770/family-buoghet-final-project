@@ -29,41 +29,41 @@ interface NewExpense {
 
 const FIXED_EXPENSE_CATEGORIES = [
   // דיור
-  { value: 'rent', label: 'שכר דירה' },
-  { value: 'mortgage', label: 'משכנתא' },
-  { value: 'building_maintenance', label: 'ועד בית ותחזוקה' },
+  { value: 'שכר דירה', label: 'שכר דירה' },
+  { value: 'משכנתא', label: 'משכנתא' },
+  { value: 'ועד בית ותחזוקה', label: 'ועד בית ותחזוקה' },
   
   // חשבונות שוטפים
-  { value: 'electricity', label: 'חשמל' },
-  { value: 'water', label: 'מים' },
-  { value: 'property_tax', label: 'ארנונה' },
-  { value: 'gas', label: 'גז' },
+  { value: 'חשמל', label: 'חשמל' },
+  { value: 'מים', label: 'מים' },
+  { value: 'ארנונה', label: 'ארנונה' },
+  { value: 'גז', label: 'גז' },
   
   // תקשורת
-  { value: 'phone', label: 'טלפון נייד' },
-  { value: 'internet', label: 'אינטרנט וטלוויזיה' },
+  { value: 'טלפון נייד', label: 'טלפון נייד' },
+  { value: 'אינטרנט וטלוויזיה', label: 'אינטרנט וטלוויזיה' },
   
   // ביטוחים
-  { value: 'car_insurance', label: 'ביטוח רכב' },
-  { value: 'health_insurance', label: 'ביטוח בריאות' },
-  { value: 'life_insurance', label: 'ביטוח חיים' },
-  { value: 'home_insurance', label: 'ביטוח דירה' },
+  { value: 'ביטוח רכב', label: 'ביטוח רכב' },
+  { value: 'ביטוח בריאות', label: 'ביטוח בריאות' },
+  { value: 'ביטוח חיים', label: 'ביטוח חיים' },
+  { value: 'ביטוח דירה', label: 'ביטוח דירה' },
   
   // הלוואות ותשלומים
-  { value: 'car_loan', label: 'תשלום רכב' },
-  { value: 'personal_loan', label: 'הלוואה אישית' },
+  { value: 'תשלום רכב', label: 'תשלום רכב' },
+  { value: 'הלוואה אישית', label: 'הלוואה אישית' },
   
   // מנויים וחברויות
-  { value: 'gym', label: 'חדר כושר וספורט' },
-  { value: 'subscriptions', label: 'מנויים דיגיטליים' },
-  { value: 'clubs', label: 'חוגים ופנאי' },
+  { value: 'חדר כושר וספורט', label: 'חדר כושר וספורט' },
+  { value: 'מנויים דיגיטליים', label: 'מנויים דיגיטליים' },
+  { value: 'חוגים ופנאי', label: 'חוגים ופנאי' },
   
   // חינוך
-  { value: 'education', label: 'חינוך ולימודים' },
-  { value: 'daycare', label: 'מעון/צהרון' },
+  { value: 'חינוך ולימודים', label: 'חינוך ולימודים' },
+  { value: 'מעון/צהרון', label: 'מעון/צהרון' },
   
   // אחר
-  { value: 'other', label: 'הוצאות קבועות אחרות' }
+  { value: 'הוצאות קבועות אחרות', label: 'הוצאות קבועות אחרות' }
 ];
 
 export const FixedExpensesPage: React.FC = () => {

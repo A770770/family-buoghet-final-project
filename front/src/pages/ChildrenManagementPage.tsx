@@ -213,6 +213,7 @@ const ChildrenManagementPage: React.FC = () => {
     const handleRequestAction = async (requestId: string, action: 'approve' | 'reject', message?: string) => {
         try {
             const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
             const response = await axios.post(
                 `${API_URL}/api/parents/requests/${requestId}/${action}`, 
                 { message },
@@ -226,6 +227,20 @@ const ChildrenManagementPage: React.FC = () => {
             if (action === 'approve' && request?.amount) {
                 const paypalLink = `https://www.paypal.com/paypalme/my/settings?flow=cmV0dXJuVXJsPWh0dHBzJTNBJTJGJTJGd3d3LnBheXBhbC5jb20lMkZteWFjY291bnQlMkZ0cmFuc2ZlciUzRmNtZCUzRHhmZXI/amount=${request.amount}`;
                 window.open(paypalLink, '_blank');
+                
+                // עדכון נתוני הדשבורד של ההורה
+                try {
+                    const dashboardResponse = await axios.get(
+                        `${API_URL}/api/dashboard/getDashboardData/${userId}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    // שליחת אירוע מותאם לעדכון הדשבורד
+                    window.dispatchEvent(new CustomEvent('dashboardUpdate', { 
+                        detail: dashboardResponse.data 
+                    }));
+                } catch (error) {
+                    console.error('שגיאה בעדכון נתוני הדשבורד:', error);
+                }
             }
             
             setChildren(prevChildren => 
