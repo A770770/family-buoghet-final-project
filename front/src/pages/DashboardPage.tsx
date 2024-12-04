@@ -58,15 +58,49 @@ const savingTips = [
     "🏠 טיפ: בדוק אפשרויות לחסוך בהוצאות הקבועות כמו חשמל ומים"
 ];
 
-// הוספת מיפוי קטגוריות
-const CATEGORY_MAPPING = {
-    'food': 'מזון',
-    'shopping': 'קניות',
-    'transportation': 'תחבורה',
-    'entertainment': 'בידור',
-    'gifts': 'מתנות',
-    'clothing': 'ביגוד',
-    'other': 'אחר'
+// מיפוי קטגוריות לעברית עם צבעים
+const FIXED_EXPENSE_CATEGORIES = [
+  { value: 'rent', label: 'שכר דירה', color: '#FF6B6B', icon: '🏠' },
+  { value: 'mortgage', label: 'משכנתא', color: '#FF6B6B', icon: '🏦' },
+  { value: 'building_maintenance', label: 'ועד בית ותחזוקה', color: '#4ECDC4', icon: '🔧' },
+  { value: 'electricity', label: 'חשמל', color: '#FFE66D', icon: '⚡' },
+  { value: 'water', label: 'מים', color: '#45B7D1', icon: '💧' },
+  { value: 'property_tax', label: 'ארנונה', color: '#96CEB4', icon: '📑' },
+  { value: 'gas', label: 'גז', color: '#D4A5A5', icon: '🔥' },
+  { value: 'utilities', label: 'חשבונות שוטפים', color: '#9B97B2', icon: '📊' },
+  { value: 'phone', label: 'טלפון נייד', color: '#77DD77', icon: '📱' },
+  { value: 'internet', label: 'אינטרנט וטלוויזיה', color: '#836FFF', icon: '🌐' },
+  { value: 'car_insurance', label: 'ביטוח רכב', color: '#FF9999', icon: '🚗' },
+  { value: 'health_insurance', label: 'ביטוח בריאות', color: '#FF99CC', icon: '⚕️' },
+  { value: 'life_insurance', label: 'ביטוח חיים', color: '#99CCFF', icon: '🏥' },
+  { value: 'home_insurance', label: 'ביטוח דירה', color: '#99FF99', icon: '🏡' },
+  { value: 'car_loan', label: 'תשלום רכב', color: '#FFB366', icon: '🚘' },
+  { value: 'personal_loan', label: 'הלוואה אישית', color: '#FF99FF', icon: '💰' },
+  { value: 'gym', label: 'חדר כושר וספורט', color: '#FF9966', icon: '🏋️' },
+  { value: 'subscriptions', label: 'מנויים דיגיטליים', color: '#9999FF', icon: '📱' },
+  { value: 'clubs', label: 'חוגים ופנאי', color: '#FFCC99', icon: '🎨' },
+  { value: 'education', label: 'חינוך ולימודים', color: '#99FFCC', icon: '📚' },
+  { value: 'daycare', label: 'מעון/צהרון', color: '#FF99CC', icon: '👶' },
+  { value: 'other', label: 'הוצאות קבועות אחרות', color: '#B8B8B8', icon: '📌' },
+  // הוצאות רגילות
+  { value: 'food', label: 'מזון', color: '#FF6B6B', icon: '🍽️' },
+  { value: 'shopping', label: 'קניות', color: '#4ECDC4', icon: '🛍️' },
+  { value: 'transportation', label: 'תחבורה', color: '#FFE66D', icon: '🚌' },
+  { value: 'entertainment', label: 'בידור', color: '#45B7D1', icon: '🎭' },
+  { value: 'gifts', label: 'מתנות', color: '#96CEB4', icon: '🎁' },
+  { value: 'clothing', label: 'ביגוד', color: '#D4A5A5', icon: '👕' }
+];
+
+const getCategoryLabel = (category: string): string => {
+  return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.label || category;
+};
+
+const getCategoryIcon = (category: string): string => {
+  return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.icon || '📌';
+};
+
+const getCategoryColor = (category: string): string => {
+  return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.color || '#B8B8B8';
 };
 
 const DashboardPage: React.FC = () => {
@@ -350,7 +384,7 @@ const DashboardPage: React.FC = () => {
                             <Pie
                                 data={nonRecurringExpenses.map(expense => ({
                                     ...expense,
-                                    category: CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category
+                                    category: getCategoryLabel(expense.category)
                                 }))}
                                 dataKey="amount"
                                 nameKey="category"
@@ -418,7 +452,7 @@ const DashboardPage: React.FC = () => {
                             <Pie
                                 data={recurringExpenses.map(expense => ({
                                     ...expense,
-                                    category: CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category
+                                    category: getCategoryLabel(expense.category)
                                 }))}
                                 dataKey="amount"
                                 nameKey="category"
@@ -472,7 +506,7 @@ const DashboardPage: React.FC = () => {
                             <option value="all">כל הקטגוריות</option>
                             {allCategories.map(category => (
                                 <option key={category} value={category}>
-                                    {CATEGORY_MAPPING[category as keyof typeof CATEGORY_MAPPING] || category}
+                                    {getCategoryLabel(category)}
                                 </option>
                             ))}
                         </select>
@@ -481,10 +515,21 @@ const DashboardPage: React.FC = () => {
 
                 <div className="expenses-list">
                     {filteredExpenses.map((expense) => (
-                        <div key={expense._id} className="expense-card">
+                        <div 
+                            key={expense._id} 
+                            className="expense-card"
+                            style={{ 
+                                borderRight: `4px solid ${getCategoryColor(expense.category)}`,
+                            }}
+                        >
+                            <div className="expense-icon">
+                                {getCategoryIcon(expense.category)}
+                            </div>
                             <div className="expense-details">
                                 <h4>{expense.description || 'הוצאה'}</h4>
-                                <p className="category">{CATEGORY_MAPPING[expense.category as keyof typeof CATEGORY_MAPPING] || expense.category}</p>
+                                <p className="category" style={{ color: getCategoryColor(expense.category) }}>
+                                    {getCategoryLabel(expense.category)}
+                                </p>
                             </div>
                             <div className="expense-amount">
                                 ₪{expense.amount.toLocaleString()}

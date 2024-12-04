@@ -343,67 +343,73 @@
 
 /* Expenses List */
 .expenses-list {
+    margin-top: 20px;
+    padding: 0;
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.2rem;
-    margin-top: 1rem;
+    gap: 15px;
 }
 
 .expense-card {
-    background: white;
+    background: #ffffff;
     border-radius: 12px;
-    padding: 1.2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    border: 1px solid #eef2f7;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    gap: 0.5rem;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
 .expense-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-right: 4px solid #2193b0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.expense-icon {
+    font-size: 1.5rem;
+    margin-left: 15px;
+    min-width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .expense-details {
-    grid-column: 1;
-    grid-row: 1;
+    flex: 1;
+    min-width: 0;
 }
 
 .expense-details h4 {
-    margin: 0 0 0.5rem 0;
-    color: #2d3436;
-    font-size: 1.1rem;
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .expense-details .category {
-    color: #2193b0;
+    margin: 5px 0 0;
     font-size: 0.9rem;
-    margin: 0;
+    font-weight: 500;
 }
 
 .expense-amount {
-    grid-column: 2;
-    grid-row: 1;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #2193b0;
-    text-align: left;
-    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 20px;
+    white-space: nowrap;
 }
 
 .expense-date {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    color: #95a5a6;
-    font-size: 0.9rem;
-    margin: 0;
-    padding-top: 0.5rem;
-    border-top: 1px solid #f0f3f7;
+    font-size: 0.85rem;
+    color: #888;
+    white-space: nowrap;
 }
 
 .category-filter {

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Family Budget Project Documentation</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+
+    body {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 1rem;
+}
+
+h2 {
+    font-size: 1.8rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 85%;
+}
+
+pre {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+ul, ol {
+    padding-left: 2rem;
+}
+
+li {
+    margin: 0.5rem 0;
+}
+
+a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1rem 0;
+    padding-left: 1rem;
+    color: #666;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 0.8rem;
+    text-align: left;
+}
+
+th {
+    background-color: #f8f9fa;
+}
+
+tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1rem auto;
+}
+
+hr {
+    border: none;
+    border-top: 2px solid #eee;
+    margin: 2rem 0;
+}
+
+/* Special styling for emojis in headers */
+h2 img.emoji {
+    display: inline;
+    margin: 0;
+    vertical-align: middle;
+}
+
+/* Print-specific styles */
+@media print {
+    body {
+        background-color: white;
+        padding: 1.5cm;
+    }
+    
+    pre, code {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+}
+  </style>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Family Budget Project Documentation</h1>
+</header>
+<h1 id="family-budget---ניהול-תקציב-משפחתי">Family Budget - ניהול תקציב
+משפחתי</h1>
+<h2 id="ספר-פרויקט-גמר">ספר פרויקט גמר</h2>
+<div dir="rtl">
+<h3 id="שער-הפרויקט">שער הפרויקט</h3>
+<ul>
+<li><strong>שם הפרויקט</strong>: Family Budget - ניהול תקציב משפחתי</li>
+<li><strong>תחום</strong>: תוכנה - אפליקציית ווב לניהול פיננסי</li>
+<li><strong>שמות הסטודנטים</strong>: מנחם מענדל אושקי ומנחם מענדל
+אופן</li>
+<li><strong>מנחה הפרויקט</strong>: אסף עמיר</li>
+<li><strong>מוסד אקדמי</strong>: מכללת אורט סינגאלובסקי</li>
+<li><strong>תאריך</strong>: 2024</li>
+</ul>
+<h3 id="תוכן-עניינים">תוכן עניינים</h3>
+<ol type="1">
+<li><a href="#1-הצהרת-סטודנטים-ואישור-מנחה">הצהרת סטודנטים ואישור
+מנחה</a></li>
+<li><a href="#2-פרטי-הפרויקט">פרטי הפרויקט</a></li>
+<li><a href="#3-רקע-כללי">רקע כללי</a></li>
+<li><a href="#4-מטרות-המערכת">מטרות המערכת</a></li>
+<li><a href="#5-פונקציונליות-עיקריות">פונקציונליות עיקריות</a></li>
+<li><a href="#6-סקירה-טכנולוגית">סקירה טכנולוגית</a></li>
+<li><a href="#7-מבנה-הנתונים-והמערכת">מבנה הנתונים והמערכת</a></li>
+<li><a href="#8-תהליך-פיתוח">תהליך פיתוח</a></li>
+<li><a href="#9-תהליך-בדיקות">תהליך בדיקות</a></li>
+<li><a href="#10-אתגרים-ופתרונות">אתגרים ופתרונות</a></li>
+<li><a href="#11-תובנות-ושיפורים-עתידיים">תובנות ושיפורים
+עתידיים</a></li>
+<li><a href="#12-סיכום-ומסקנות">סיכום ומסקנות</a></li>
+<li><a href="#13-ביבליוגרפיה">ביבליוגרפיה</a></li>
+<li><a href="#14-נספחים">נספחים</a></li>
+</ol>
+<h3 id="הצהרת-סטודנטים-ואישור-מנחה">1. הצהרת סטודנטים ואישור מנחה</h3>
+<p>אני מצהיר בזאת כי פרויקט זה נעשה על ידי, וכי כל המקורות שבהם השתמשתי
+צוינו בביבליוגרפיה.</p>
+<p>חתימת הסטודנט: ____________ תאריך: ____________</p>
+<p>אישור המנחה: ____________ תאריך: ____________</p>
+<h3 id="פרטי-הפרויקט">2. פרטי הפרויקט</h3>
+<ul>
+<li><strong>תחום עיסוק</strong>: תוכנה - אפליקציית ווב לניהול
+פיננסי</li>
+<li><strong>סביבת ביצוע</strong>:
+<ul>
+<li><strong>Frontend</strong>: React, TypeScript</li>
+<li><strong>Backend</strong>: Node.js</li>
+<li><strong>נתונים</strong>: MongoDB</li>
+<li><strong>תמיכה בעברית</strong>: ממשק RTL</li>
+</ul></li>
+</ul>
+<h3 id="רקע-כללי">3. רקע כללי</h3>
+<p>Family Budget היא אפליקציית ווב ייחודית לניהול תקציב משפחתי. הפרויקט
+נועד להעניק מענה למשפחות המעוניינות לעקוב אחר ההוצאות השוטפות שלהן ולשפר
+את המודעות הפיננסית.</p>
+<p>המערכת מאפשרת למשתמשים לנהל את התקציב המשפחתי שלהם בצורה יעילה ונוחה,
+עם דגש מיוחד על: - מעקב אחר הוצאות קבועות - ניתוח דפוסי הוצאות - תכנון
+תקציבי - קבלת תובנות פיננסיות</p>
+<h3 id="מטרות-המערכת">4. מטרות המערכת</h3>
+<ol type="1">
+<li><strong>מעקב אחר הוצאות</strong>:
+<ul>
+<li>ניהול הוצאות קבועות ומשתנות</li>
+<li>קטגוריזציה של הוצאות</li>
+<li>תיעוד היסטוריית הוצאות</li>
+</ul></li>
+<li><strong>ויזואליזציה של נתונים</strong>:
+<ul>
+<li>גרפים ותרשימים אינטראקטיביים</li>
+<li>דוחות מפורטים</li>
+<li>תצוגת מגמות לאורך זמן</li>
+</ul></li>
+<li><strong>חווית משתמש</strong>:
+<ul>
+<li>ממשק משתמש אינטואיטיבי בעברית</li>
+<li>תמיכה מלאה ב-RTL</li>
+<li>עיצוב מודרני ונקי</li>
+</ul></li>
+<li><strong>אבטחה ופרטיות</strong>:
+<ul>
+<li>אימות משתמשים מאובטח</li>
+<li>הגנה על מידע רגיש</li>
+<li>הרשאות גישה מדורגות</li>
+</ul></li>
+</ol>
+<h3 id="פונקציונליות-עיקריות">5. פונקציונליות עיקריות</h3>
+<h4 id="דשבורד-ראשי">דשבורד ראשי</h4>
+<ul>
+<li>תצוגת סיכום הוצאות חודשית</li>
+<li>גרף עוגה לפילוח הוצאות לפי קטגוריות</li>
+<li>רשימת הוצאות אחרונות</li>
+<li>טיפים לחיסכון</li>
+</ul>
+<h4 id="ניהול-הוצאות-קבועות">ניהול הוצאות קבועות</h4>
+<ul>
+<li>הוספת הוצאות קבועות חדשות</li>
+<li>עריכה ומחיקה של הוצאות קיימות</li>
+<li>תזכורות לתשלומים</li>
+<li>מעקב אחר תשלומים חוזרים</li>
+</ul>
+<h4 id="מעקב-לפי-קטגוריות">מעקב לפי קטגוריות</h4>
+<ul>
+<li>קטגוריות מובנות להוצאות נפוצות</li>
+<li>אפשרות להוספת קטגוריות מותאמות אישית</li>
+<li>צבעים ואייקונים ייחודיים לכל קטגוריה</li>
+<li>ניתוח הוצאות לפי קטגוריה</li>
+</ul>
+<h3 id="סקירה-טכנולוגית">6. סקירה טכנולוגית</h3>
+<h4 id="frontend">Frontend</h4>
+<ul>
+<li><strong>React</strong>: לפיתוח ממשק המשתמש</li>
+<li><strong>TypeScript</strong>: לכתיבת קוד מאובטח ומתוחזק</li>
+<li><strong>Recharts</strong>: לויזואליזציה של נתונים</li>
+<li><strong>CSS Modules</strong>: לעיצוב מודולרי</li>
+<li><strong>React Router</strong>: לניווט בין דפים</li>
+<li><strong>Axios</strong>: לתקשורת עם השרת</li>
+</ul>
+<h4 id="backend">Backend</h4>
+<ul>
+<li><strong>Node.js</strong>: שרת REST API</li>
+<li><strong>Express</strong>: מסגרת לפיתוח השרת</li>
+<li><strong>MongoDB</strong>: בסיס נתונים</li>
+<li><strong>JWT</strong>: לאימות משתמשים</li>
+<li><strong>bcrypt</strong>: להצפנת סיסמאות</li>
+</ul>
+<h3 id="מבנה-הנתונים-והמערכת">7. מבנה הנתונים והמערכת</h3>
+<h4 id="מודל-נתונים">מודל נתונים</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// משתמש</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> User {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  username<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  email<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  password<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  createdAt<span class="op">:</span> <span class="bu">Date</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">// הוצאה קבועה</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> FixedExpense {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  userId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  category<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  amount<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  description<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  dueDate<span class="op">:</span> <span class="bu">Date</span><span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  isRecurring<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co">// קטגוריה</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> Category {</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  value<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  label<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  color<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  icon<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="תהליך-פיתוח">8. תהליך פיתוח</h3>
+<ol type="1">
+<li><strong>אפיון ותכנון</strong>:
+<ul>
+<li>הגדרת דרישות המערכת</li>
+<li>תכנון ארכיטקטורה</li>
+<li>עיצוב ממשק משתמש</li>
+</ul></li>
+<li><strong>פיתוח Frontend</strong>:
+<ul>
+<li>בניית קומפוננטות React</li>
+<li>יישום לוגיקת UI</li>
+<li>אינטגרציה עם Recharts</li>
+</ul></li>
+<li><strong>פיתוח Backend</strong>:
+<ul>
+<li>הקמת שרת Node.js</li>
+<li>יישום REST API</li>
+<li>חיבור לבסיס נתונים</li>
+</ul></li>
+<li><strong>אינטגרציה ובדיקות</strong>:
+<ul>
+<li>חיבור Frontend ו-Backend</li>
+<li>בדיקות יחידה</li>
+<li>בדיקות אינטגרציה</li>
+</ul></li>
+</ol>
+<h3 id="תהליך-בדיקות">9. תהליך בדיקות</h3>
+<h4 id="בדיקות-פונקציונליות">בדיקות פונקציונליות</h4>
+<ul>
+<li>תקינות הוספת הוצאות</li>
+<li>עדכון ומחיקת נתונים</li>
+<li>תצוגת גרפים ודוחות</li>
+</ul>
+<h4 id="בדיקות-ממשק">בדיקות ממשק</h4>
+<ul>
+<li>תמיכה בעברית</li>
+<li>תצוגה נכונה ב-RTL</li>
+<li>תאימות לדפדפנים שונים</li>
+</ul>
+<h4 id="בדיקות-אבטחה">בדיקות אבטחה</h4>
+<ul>
+<li>אימות משתמשים</li>
+<li>הצפנת נתונים</li>
+<li>הרשאות גישה</li>
+</ul>
+<h3 id="אתגרים-ופתרונות">10. אתגרים ופתרונות</h3>
+<ol type="1">
+<li><strong>תמיכה ב-RTL</strong>:
+<ul>
+<li>שימוש ב-CSS Modules</li>
+<li>הגדרת כיווניות דינמית</li>
+<li>טיפול בקונפליקטים של עיצוב</li>
+</ul></li>
+<li><strong>ניהול מצב מורכב</strong>:
+<ul>
+<li>שימוש ב-React Hooks</li>
+<li>ארגון לוגי של קומפוננטות</li>
+<li>ניהול יעיל של זרימת נתונים</li>
+</ul></li>
+<li><strong>אבטחת מידע</strong>:
+<ul>
+<li>יישום JWT</li>
+<li>הצפנת סיסמאות</li>
+<li>וולידציה של קלט</li>
+</ul></li>
+</ol>
+<h3 id="תובנות-ושיפורים-עתידיים">11. תובנות ושיפורים עתידיים</h3>
+<h4 id="שיפורים-טכניים">שיפורים טכניים</h4>
+<ol type="1">
+<li><strong>ביצועים</strong>:
+<ul>
+<li>אופטימיזציה של שאילתות</li>
+<li>שימוש ב-caching</li>
+<li>lazy loading של קומפוננטות</li>
+</ul></li>
+<li><strong>פיתוח נוסף</strong>:
+<ul>
+<li>אפליקציית מובייל</li>
+<li>אינטגרציה עם בנקים</li>
+<li>ייצוא דוחות מתקדם</li>
+</ul></li>
+</ol>
+<h4 id="שיפורי-ux">שיפורי UX</h4>
+<ol type="1">
+<li><strong>ממשק משתמש</strong>:
+<ul>
+<li>הוספת אנימציות</li>
+<li>שיפור נגישות</li>
+<li>תמיכה בנושאים (themes)</li>
+</ul></li>
+<li><strong>פונקציונליות</strong>:
+<ul>
+<li>תכונות חברתיות</li>
+<li>שיתוף נתונים</li>
+<li>תובנות מתקדמות</li>
+</ul></li>
+</ol>
+<h3 id="סיכום-ומסקנות">12. סיכום ומסקנות</h3>
+<p>פרויקט Family Budget הצליח להשיג את מטרותיו העיקריות: - יצירת ממשק
+משתמש נוח בעברית - מערכת יעילה לניהול הוצאות - תמיכה בניתוח נתונים
+ויזואלי - אבטחת מידע גבוהה</p>
+<p>הפרויקט מהווה בסיס איתן להמשך פיתוח ושיפור, עם אפשרויות רבות להרחבה
+עתידית.</p>
+<h3 id="ביבליוגרפיה">13. ביבליוגרפיה</h3>
+<ol type="1">
+<li>React Documentation - https://reactjs.org/docs</li>
+<li>TypeScript Handbook - https://www.typescriptlang.org/docs</li>
+<li>MongoDB Manual - https://docs.mongodb.com</li>
+<li>Node.js Documentation - https://nodejs.org/docs</li>
+<li>JWT Introduction - https://jwt.io/introduction</li>
+<li>Recharts Documentation - https://recharts.org/en-US</li>
+</ol>
+<h3 id="נספחים">14. נספחים</h3>
+<h4 id="א.-תרשימי-זרימה">א. תרשימי זרימה</h4>
+<p>[יש להוסיף תרשימים רלוונטיים]</p>
+<h4 id="ב.-צילומי-מסך">ב. צילומי מסך</h4>
+<p>[יש להוסיף צילומי מסך של המערכת]</p>
+<h4 id="ג.-קוד-לדוגמה">ג. קוד לדוגמה</h4>
+<p>[יש להוסיף דוגמאות קוד משמעותיות]</p>
+</div>
+</body>
+</html>

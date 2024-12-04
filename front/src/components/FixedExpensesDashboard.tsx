@@ -15,87 +15,74 @@ interface FixedExpense {
 }
 
 interface CategoryTotal {
-  category: string;
+  category: string; // שם הקטגוריה בעברית
   amount: number;
-  originalCategory: string;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
-// מיפוי קטגוריות לעברית
+// מיפוי הקטגוריות לעברית
 const FIXED_EXPENSE_CATEGORIES = [
-  // דיור
   { value: 'rent', label: 'שכר דירה' },
   { value: 'mortgage', label: 'משכנתא' },
   { value: 'building_maintenance', label: 'ועד בית ותחזוקה' },
-  
-  // חשבונות שוטפים
   { value: 'electricity', label: 'חשמל' },
   { value: 'water', label: 'מים' },
   { value: 'property_tax', label: 'ארנונה' },
   { value: 'gas', label: 'גז' },
-  
-  // תקשורת
   { value: 'phone', label: 'טלפון נייד' },
   { value: 'internet', label: 'אינטרנט וטלוויזיה' },
-  
-  // ביטוחים
   { value: 'car_insurance', label: 'ביטוח רכב' },
   { value: 'health_insurance', label: 'ביטוח בריאות' },
   { value: 'life_insurance', label: 'ביטוח חיים' },
   { value: 'home_insurance', label: 'ביטוח דירה' },
-  
-  // הלוואות ותשלומים
   { value: 'car_loan', label: 'תשלום רכב' },
   { value: 'personal_loan', label: 'הלוואה אישית' },
-  
-  // מנויים וחברויות
   { value: 'gym', label: 'חדר כושר וספורט' },
   { value: 'subscriptions', label: 'מנויים דיגיטליים' },
   { value: 'clubs', label: 'חוגים ופנאי' },
-  
-  // חינוך
   { value: 'education', label: 'חינוך ולימודים' },
   { value: 'daycare', label: 'מעון/צהרון' },
-  
-  // אחר
-  { value: 'other', label: 'הוצאות קבועות אחרות' }
+  { value: 'other', label: 'הוצאות קבועות אחרות' },
 ];
+
+// מיפוי הקטגוריות לאובייקטים בעברית
+const getCategoryLabel = (category: string): string => {
+  return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.label || category;
+};
+
 
 export const FixedExpensesDashboard: React.FC = () => {
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
 
-  const getCategoryLabel = (category: string): string => {
-    return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.label || category;
-  };
-
   useEffect(() => {
     const fetchFixedExpenses = async () => {
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get<FixedExpense[]>('http://localhost:5004/api/expenses/fixed', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         setFixedExpenses(response.data);
-        
-        // חישוב סך הכל
+
+        // חישוב סכום כולל
         const total = response.data.reduce((sum, expense) => sum + expense.amount, 0);
         setTotalAmount(total);
 
-        // חישוב סכומים לפי קטגוריה
+        // חישוב סכומים לפי קטגוריה בעברית
         const categoryMap = new Map<string, number>();
-        response.data.forEach(expense => {
-          const currentAmount = categoryMap.get(expense.category) || 0;
-          categoryMap.set(expense.category, currentAmount + expense.amount);
+        response.data.forEach((expense) => {
+          const hebrewCategory = getCategoryLabel(expense.category); // תרגום הקטגוריה לעברית
+          const currentAmount = categoryMap.get(hebrewCategory) || 0;
+          categoryMap.set(hebrewCategory, currentAmount + expense.amount);
         });
+        
 
         const totals = Array.from(categoryMap.entries()).map(([category, amount]) => ({
-          category: getCategoryLabel(category),
-          originalCategory: category,
-          amount
+          category, // שם בעברית
+          amount,
         }));
 
         setCategoryTotals(totals);
@@ -122,33 +109,53 @@ export const FixedExpensesDashboard: React.FC = () => {
         <div className="chart-description">
           כאן תוכל לראות את ההוצאות הקבועות שלך (כמו שכר דירה, חשמל) שצריך לשמור עבורן כסף לסוף החודש
         </div>
-        <div className="total-amount">
-          סכום לשמור: {formatNumber(totalAmount)}
-        </div>
+        <div className="total-amount">סכום לשמור: {formatNumber(totalAmount)}</div>
       </div>
       <div className="pie-chart-container">
         <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={categoryTotals}
-              dataKey="amount"
-              nameKey="category"
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-              fill="#8884d8"
-              label={({ category, amount }) => `${category}: ${formatNumber(amount)}`}
-            >
-              {categoryTotals.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value: number) => formatNumber(value)}
-              labelFormatter={(category) => `קטגוריה: ${category}`}
-            />
-          </PieChart>
+          {categoryTotals.length ? (
+            <PieChart>
+              <Pie
+                data={categoryTotals}
+                dataKey="amount"
+                nameKey="category"
+                cx="50%"
+                cy="50%"
+                innerRadius={80}
+                outerRadius={160}
+                fill="#8884d8"
+                label={({ name }) => name}
+              >
+                {categoryTotals.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value: number) => formatNumber(value)}
+                labelFormatter={(name) => name}
+              />
+            </PieChart>
+          ) : (
+            <div>אין נתונים להציג</div>
+          )}
         </ResponsiveContainer>
+      </div>
+
+      <div className="recent-expenses">
+        <h3>הוצאות אחרונות</h3>
+        <div className="expenses-list">
+          {fixedExpenses.slice(0, 5).map((expense) => (
+            <div key={expense._id} className="expense-item">
+              <div className="expense-details">
+                <span className="expense-category">{getCategoryLabel(expense.category)}</span>
+                <span className="expense-amount">{formatNumber(expense.amount)}</span>
+              </div>
+              <div className="expense-date">
+                תשלום הבא: {new Date(expense.recurringDetails.nextDate).toLocaleDateString('he-IL')}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

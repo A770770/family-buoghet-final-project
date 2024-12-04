@@ -38,6 +38,7 @@ const FIXED_EXPENSE_CATEGORIES = [
   { value: 'water', label: 'מים' },
   { value: 'property_tax', label: 'ארנונה' },
   { value: 'gas', label: 'גז' },
+  { value: 'utilities', label: 'חשבונות שוטפים' },
   
   // תקשורת
   { value: 'phone', label: 'טלפון נייד' },
@@ -109,6 +110,10 @@ export const FixedExpensesPage: React.FC = () => {
   useEffect(() => {
     fetchExpenses();
   }, []);
+
+  const getCategoryLabel = (category: string): string => {
+    return FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === category)?.label || category;
+  };
 
   const handleAddExpense = async () => {
     if (!newExpense.category || !newExpense.amount || !selectedDate) {
@@ -338,7 +343,7 @@ export const FixedExpensesPage: React.FC = () => {
                 <FaClock />
               </div>
               <div className="expense-title">
-                <h3>{FIXED_EXPENSE_CATEGORIES.find(cat => cat.value === expense.category)?.label}</h3>
+                <h3>{getCategoryLabel(expense.category)}</h3>
                 <p className="expense-amount">₪{expense.amount.toLocaleString()}</p>
               </div>
               <button
