@@ -316,123 +316,142 @@
 }
 
 /* Recent Expenses Section */
-.recent-expenses-section {
+.recent-expenses {
     background: white;
     border-radius: 15px;
     padding: 1.5rem;
-    margin-top: 2rem;
+    margin: 2rem 0;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.section-header {
+.recent-expenses .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #f0f3f7;
+    border-bottom: 2px solid #e6e9f0;
 }
 
-.section-header h3 {
-    color: #2193b0;
-    font-size: 1.3rem;
+.recent-expenses h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
     background: linear-gradient(135deg, #2193b0, #6dd5ed);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-/* Expenses List */
 .expenses-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.2rem;
-    margin-top: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
 }
 
-.expense-card {
-    background: white;
+.expense-item {
+    background: #ffffff;
     border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.5rem;
-}
-
-.expense-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-right: 4px solid #2193b0;
-}
-
-.expense-details {
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border-right: 3px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.expense-details h4 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: #2D3748;
+.expense-item:hover {
+    transform: translateX(-4px);
+    border-right: 3px solid #2193b0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.category {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    font-weight: 500;
+.expense-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 8px;
+    border-radius: 8px;
 }
 
 .expense-amount {
     font-size: 1.2rem;
-    font-weight: bold;
-    color: #2D3748;
-    text-align: left;
-    margin: 0;
+    font-weight: 700;
+    color: #2d3748;
+    background: #edf2f7;
+    padding: 6px 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.expense-amount::before {
+    content: '₪';
+    font-size: 0.9em;
+    color: #4a5568;
+}
+
+.expense-category {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: #ebf8ff;
+    color: #2b6cb0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .expense-date {
-    grid-column: 1 / -1;
+    font-size: 0.85rem;
     color: #718096;
-    font-size: 0.9rem;
-    margin: 0;
+    margin-top: 0.25rem;
 }
 
 .category-filter {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: white;
+    background: #fff;
     border-radius: 8px;
-    padding: 0.5rem 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    border: 1px solid #eef2f7;
-}
-
-.search-icon {
-    color: #2193b0;
+    padding: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .category-select {
-    border: none;
-    outline: none;
-    font-size: 1rem;
-    color: #2d3436;
-    padding: 0.3rem;
-    background: transparent;
+    appearance: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: #4a5568;
+    background-color: #fff;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.category-select:hover {
+    border-color: #2193b0;
+}
+
+.category-select:focus {
+    outline: none;
+    border-color: #2193b0;
+    box-shadow: 0 0 0 2px rgba(33, 147, 176, 0.2);
 }
 
 .no-expenses {
-    grid-column: 1 / -1;
     text-align: center;
     padding: 2rem;
-    background: #f8f9fa;
-    border-radius: 12px;
-    color: #95a5a6;
+    color: #a0aec0;
+    font-size: 1.1rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-top: 1rem;
 }
 
 /* Category Filter */
@@ -551,6 +570,7 @@
     border-radius: 8px;
     margin: 0.3rem 0;
     font-weight: 500;
+    position: relative;
 }
 
 .menu-item svg {
@@ -1137,4 +1157,25 @@
     animation-play-state: paused;
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #ff4b4b;
+    color: white;
+    border-radius: 50%;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    min-width: 20px;
+    min-height: 20px;
+    z-index: 1;
+}
+
+.notification-count {
+    margin-left: 4px;
 }

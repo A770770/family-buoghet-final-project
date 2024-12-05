@@ -11,6 +11,8 @@ import Confetti from 'react-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpring, animated } from 'react-spring';
 
+const API_URL = 'http://localhost:5004';
+
 interface DashboardData {
     currentBalance: number;
     totalExpenses: number;
@@ -69,19 +71,27 @@ const EXPENSE_CATEGORIES = [
     { value: 'אחר', label: 'אחר' }
 ];
 
-// מיפוי קטגוריות (לתאימות עם נתונים קיימים)
-const CATEGORY_MAPPING = {
+// מיפוי קטגוריות לעברית
+const CATEGORY_MAPPING: { [key: string]: string } = {
     'food': 'מזון',
-    'shopping': 'קניות',
     'transportation': 'תחבורה',
     'entertainment': 'בידור',
-    'gifts': 'מתנות',
-    'clothing': 'ביגוד',
+    'shopping': 'קניות',
+    'bills': 'חשבונות',
+    'health': 'בריאות',
+    'education': 'חינוך',
     'other': 'אחר'
 };
 
-const getHebrewCategory = (category: string) => {
-    return CATEGORY_MAPPING[category as keyof typeof CATEGORY_MAPPING] || category;
+// פונקציה להמרת קטגוריה לעברית
+const getHebrewCategory = (category: string): string => {
+    return CATEGORY_MAPPING[category] || category;
+};
+
+// פונקציה להמרת קטגוריה לאנגלית
+const getEnglishCategory = (hebrewCategory: string): string => {
+    const entry = Object.entries(CATEGORY_MAPPING).find(([_, value]) => value === hebrewCategory);
+    return entry ? entry[0] : hebrewCategory;
 };
 
 const DashboardPage: React.FC = () => {
@@ -115,7 +125,7 @@ const DashboardPage: React.FC = () => {
                     navigate('/login');
                     return;
                 }
-                const response = await axios.get(`http://localhost:5004/api/auth/users/${userId}`, {
+                const response = await axios.get(`${API_URL}/api/auth/users/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setUserInfo(response.data);
@@ -141,7 +151,7 @@ const DashboardPage: React.FC = () => {
                     return;
                 }
                 const response = await axios.get(
-                    `http://localhost:5004/api/dashboard/getDashboardData/${userId}`,
+                    `${API_URL}/api/dashboard/getDashboardData/${userId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setData(response.data);
@@ -195,8 +205,8 @@ const DashboardPage: React.FC = () => {
 
     // סינון הוצאות לפי קטגוריה
     const filteredExpenses = data?.recentExpenses?.filter(expense => {
-        const hebrewCategory = getHebrewCategory(expense.category);
-        return selectedCategory === 'all' || hebrewCategory === selectedCategory;
+        if (selectedCategory === 'all') return true;
+        return expense.category === getEnglishCategory(selectedCategory);
     }) || [];
 
     // הוצאות לגרפים
@@ -314,7 +324,7 @@ const DashboardPage: React.FC = () => {
                                 {userInfo?.role === 'parent' && (
                                     <>
                                         <Link to="/children" className="menu-item children" onClick={() => setShowHamburgerMenu(false)}>
-                                            <FaChild /> ניהול ילדים
+                                            <FaChild /> ניהול משתמשים
                                         </Link>
                                     </>
                                 )}
@@ -486,32 +496,54 @@ const DashboardPage: React.FC = () => {
                             className="category-select"
                         >
                             <option value="all">כל הקטגוריות</option>
-                            {EXPENSE_CATEGORIES.map(category => (
-                                <option key={category.value} value={category.value}>
-                                    {category.label}
+                            {Object.values(CATEGORY_MAPPING).map(hebrewCategory => (
+                                <option key={hebrewCategory} value={hebrewCategory}>
+                                    {hebrewCategory}
                                 </option>
                             ))}
                         </select>
                     </div>
                 </div>
+
                 <div className="expenses-list">
-                    {filteredExpenses.map((expense) => {
-                        const hebrewCategory = getHebrewCategory(expense.category);
-                        return (
-                            <div key={expense._id} className="expense-card">
-                                <div className="expense-details">
-                                    <h4>{expense.description}</h4>
-                                    <span className={`category category-${hebrewCategory}`}>
-                                        {hebrewCategory}
+                    {filteredExpenses.length > 0 ? (
+                        filteredExpenses.map((expense, index) => (
+                            <motion.div
+                                key={index}
+                                className="expense-item"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.3, delay: index * 0.1 }}
+                                whileHover={{
+                                    scale: 1.02,
+                                    x: -5,
+                                    transition: { duration: 0.2 }
+                                }}
+                            >
+                                <div className="expense-info">
+                                    <span className="expense-category">
+                                        {getHebrewCategory(expense.category)}
+                                    </span>
+                                    <span className="expense-amount">
+                                        {expense.amount.toLocaleString()}
                                     </span>
                                 </div>
-                                <p className="expense-amount">₪{expense.amount.toLocaleString()}</p>
-                                <p className="expense-date">
+                                <div className="expense-date">
                                     {new Date(expense.date).toLocaleDateString('he-IL')}
-                                </p>
-                            </div>
-                        );
-                    })}
+                                </div>
+                            </motion.div>
+                        ))
+                    ) : (
+                        <motion.div
+                            className="no-expenses"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                        >
+                            <FaPiggyBank />
+                            <p>אין הוצאות להצגה בקטגוריה זו</p>
+                        </motion.div>
+                    )}
                 </div>
             </div>
         </div>
