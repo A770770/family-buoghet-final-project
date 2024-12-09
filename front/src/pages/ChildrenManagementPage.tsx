@@ -285,7 +285,7 @@ const ChildrenManagementPage: React.FC = () => {
             >
                 <FaHome size={24} />
             </button>
-            <h1>ניהול ילדים</h1>
+            <h1>ניהול משתמשים</h1>
             <button className="add-child-button" onClick={() => setShowAddChildModal(true)}>
                 <FaPlus /> הוסף ילד
             </button>

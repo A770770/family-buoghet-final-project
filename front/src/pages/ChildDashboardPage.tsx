@@ -213,7 +213,7 @@ const ChildDashboardPage: React.FC = () => {
                                 {parentInfo && (
                                     <p><strong>הורה:</strong> {parentInfo.name}</p>
                                 )}
-                                <p><strong>תפקיד:</strong> ילד</p>
+                                <p><strong>ילד</strong></p>
                             </div>
                             <button className="logout-button" onClick={handleLogout}>
                                 <FiLogOut />
