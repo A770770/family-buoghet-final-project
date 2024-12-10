@@ -357,6 +357,7 @@ const ChildDashboardPage: React.FC = () => {
                                     onChange={(e) => setRequestCategory(e.target.value)}
                                     required
                                 >
+                                    <option value="">בחר קטגוריה</option>
                                     {categories.map((category) => (
                                         <option key={category} value={category}>
                                             {category}
