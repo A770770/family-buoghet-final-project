@@ -272,44 +272,72 @@ export const FixedExpensesPage: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>הוספת הוצאה קבועה</h2>
-            <select
-              value={newExpense.category}
-              onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-            >
-              <option value="">בחר קטגוריה</option>
-              {FIXED_EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
+            
+            <div className="form-group">
+              <label>קטגוריה</label>
+              <div className="select-wrapper">
+                <select
+                  value={newExpense.category}
+                  onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+                >
+                  <option value="">בחר קטגוריה</option>
+                  {FIXED_EXPENSE_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="category-icon">
+                  <FaClock />
+                </div>
+              </div>
+            </div>
 
-            <input
-              type="number"
-              placeholder="סכום"
-              value={newExpense.amount}
-              onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-            />
+            <div className="form-group">
+              <label>סכום</label>
+              <div className="input-wrapper">
+                <input
+                  type="number"
+                  placeholder="סכום"
+                  value={newExpense.amount}
+                  onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                />
+                <span className="currency-symbol">₪</span>
+              </div>
+            </div>
 
-            <select
-              value={newExpense.recurringDetails.frequency}
-              onChange={(e) => setNewExpense({
-                ...newExpense,
-                recurringDetails: {
-                  ...newExpense.recurringDetails,
-                  frequency: e.target.value
-                }
-              })}
-            >
-              <option value="monthly">חודשי</option>
-              <option value="bimonthly">דו-חודשי</option>
-            </select>
+            <div className="form-group">
+              <label>תדירות</label>
+              <div className="select-wrapper">
+                <select
+                  value={newExpense.recurringDetails.frequency}
+                  onChange={(e) => setNewExpense({
+                    ...newExpense,
+                    recurringDetails: {
+                      ...newExpense.recurringDetails,
+                      frequency: e.target.value
+                    }
+                  })}
+                >
+                  <option value="monthly">חודשי</option>
+                  <option value="bimonthly">דו-חודשי</option>
+                </select>
+                <div className="category-icon">
+                  <FaCalendarAlt />
+                </div>
+              </div>
+            </div>
 
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            />
+            <div className="form-group">
+              <label>תאריך תשלום הבא</label>
+              <div className="input-wrapper">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </div>
+            </div>
 
             <div className="modal-buttons">
               <button onClick={handleAddExpense}>הוסף</button>

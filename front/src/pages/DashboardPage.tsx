@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import Confetti from 'react-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSpring, animated } from 'react-spring';
+import NotificationBell from '../components/NotificationBell';
 
 const API_URL = 'http://localhost:5004';
 
@@ -298,6 +299,7 @@ const DashboardPage: React.FC = () => {
                 <h1>דשבורד משפחתי</h1>
 
                 <div className="header-right">
+                    <NotificationBell />
                     <button 
                         className="hamburger-button" 
                         onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}

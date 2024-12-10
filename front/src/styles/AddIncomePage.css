@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #e3ffe7 0%, #d9e7ff 100%);
+  background: linear-gradient(135deg, #64b5f6 0%, #2196f3 100%);
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -20,39 +20,40 @@
 
 .money-symbol {
   position: absolute;
-  color: rgba(33, 150, 243, 0.1);
+  color: rgba(255, 255, 255, 0.2);
   font-size: 24px;
-  animation: floatMoney 15s linear infinite;
+  animation: fallMoney 8s linear infinite;
 }
 
-@keyframes floatMoney {
+@keyframes fallMoney {
   0% {
-    transform: translateY(100vh) rotate(0deg);
+    transform: translateY(-100px) rotate(0deg);
     opacity: 0;
   }
   10% {
-    opacity: 0.8;
+    opacity: 1;
   }
   90% {
-    opacity: 0.8;
+    opacity: 1;
   }
   100% {
-    transform: translateY(-100px) rotate(360deg);
+    transform: translateY(100vh) rotate(360deg);
     opacity: 0;
   }
 }
 
 .income-form-container {
   background: rgba(255, 255, 255, 0.95);
-  padding: 2rem;
-  border-radius: 15px;
+  padding: 2.5rem;
+  border-radius: 20px;
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
   width: 100%;
   max-width: 500px;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
+  direction: rtl;
 }
 
 .form-header {
@@ -60,7 +61,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   position: relative;
 }
 
@@ -104,6 +105,7 @@
 .form-group {
   margin-bottom: 1.5rem;
   position: relative;
+  text-align: right;
 }
 
 .form-group label {
@@ -114,34 +116,64 @@
   transition: color 0.3s ease;
 }
 
-.form-group:focus-within label {
-  color: #2196f3;
+.input-wrapper,
+.select-wrapper {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.input-wrapper input,
+.select-wrapper select {
   width: 100%;
-  padding: 0.8rem;
+  height: 40px !important;
+  padding: 0 2.5rem 0 1rem !important;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.9);
+  appearance: none;
+  direction: rtl;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #2196f3;
-  background: white;
-  box-shadow: 0 0 15px rgba(33, 150, 243, 0.1);
+.currency-symbol {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.category-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2196f3;
+  font-size: 1.2rem;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .form-group textarea {
-  min-height: 100px;
-  resize: vertical;
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  appearance: none;
+  direction: rtl;
+  resize: none;
+  overflow-y: auto;
 }
 
 .form-actions {

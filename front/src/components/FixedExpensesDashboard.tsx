@@ -9,9 +9,10 @@ interface FixedExpense {
   category: string;
   description: string;
   recurringDetails: {
-    frequency: 'monthly';
+    frequency: 'monthly' | 'bimonthly';
     nextDate: Date;
   };
+  monthlyAmount: number;
 }
 
 interface CategoryTotal {
@@ -82,14 +83,16 @@ export const FixedExpensesDashboard: React.FC = () => {
         setFixedExpenses(response.data);
         
         // חישוב סך הכל
-        const total = response.data.reduce((sum, expense) => sum + expense.amount, 0);
+        const total = response.data.reduce((sum, expense) => {
+          return sum + expense.monthlyAmount;
+        }, 0);
         setTotalAmount(total);
 
         // חישוב סכומים לפי קטגוריה
         const categoryMap = new Map<string, number>();
         response.data.forEach(expense => {
           const currentAmount = categoryMap.get(expense.category) || 0;
-          categoryMap.set(expense.category, currentAmount + expense.amount);
+          categoryMap.set(expense.category, currentAmount + expense.monthlyAmount);
         });
 
         const totals = Array.from(categoryMap.entries()).map(([category, amount]) => ({

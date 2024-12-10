@@ -225,7 +225,11 @@ exports.getFixedExpenses = async (req, res) => {
             recurringDetails: expense.recurringDetails || {
                 frequency: 'monthly',
                 nextDate: expense.date || new Date()
-            }
+            },
+            // מחשב את הסכום החודשי עבור הוצאות דו-חודשיות
+            monthlyAmount: expense.recurringDetails?.frequency === 'bimonthly' 
+                ? expense.amount / 2 
+                : expense.amount
         }));
         
         res.json(processedExpenses);

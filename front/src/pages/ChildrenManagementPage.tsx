@@ -223,24 +223,24 @@ const ChildrenManagementPage: React.FC = () => {
             // עדכון הילד הספציפי עם הנתונים החדשים
             const { child: updatedChild, request } = response.data;
 
+            // עדכון נתוני הדשבורד של ההורה
+            try {
+                const dashboardResponse = await axios.get(
+                    `${API_URL}/api/dashboard/getDashboardData/${userId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                // שליחת אירוע מותאם לעדכון הדשבורד
+                window.dispatchEvent(new CustomEvent('dashboardUpdate', { 
+                    detail: dashboardResponse.data 
+                }));
+            } catch (error) {
+                console.error('שגיאה בעדכון נתוני הדשבורד:', error);
+            }
+
             // אם הבקשה אושרה, פתח את קישור התשלום של PayPal
             if (action === 'approve' && request?.amount) {
                 const paypalLink = `https://www.paypal.com/paypalme/my/settings?flow=cmV0dXJuVXJsPWh0dHBzJTNBJTJGJTJGd3d3LnBheXBhbC5jb20lMkZteWFjY291bnQlMkZ0cmFuc2ZlciUzRmNtZCUzRHhmZXI/amount=${request.amount}`;
                 window.open(paypalLink, '_blank');
-                
-                // עדכון נתוני הדשבורד של ההורה
-                try {
-                    const dashboardResponse = await axios.get(
-                        `${API_URL}/api/dashboard/getDashboardData/${userId}`,
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
-                    // שליחת אירוע מותאם לעדכון הדשבורד
-                    window.dispatchEvent(new CustomEvent('dashboardUpdate', { 
-                        detail: dashboardResponse.data 
-                    }));
-                } catch (error) {
-                    console.error('שגיאה בעדכון נתוני הדשבורד:', error);
-                }
             }
             
             setChildren(prevChildren => 

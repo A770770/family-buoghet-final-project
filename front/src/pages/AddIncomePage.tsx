@@ -180,30 +180,38 @@ const AddIncomePage: React.FC = () => {
         <motion.form onSubmit={handleSubmit}>
           <motion.div className="form-group" variants={itemVariants}>
             <label>סכום:</label>
-            <motion.input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="הכנס סכום"
-              required
-              whileFocus={{ scale: 1.02, boxShadow: '0 0 8px rgba(33, 150, 243, 0.4)' }}
-            />
+            <div className="input-wrapper">
+              <motion.input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="הכנס סכום"
+                required
+                whileFocus={{ scale: 1.02, boxShadow: '0 0 8px rgba(33, 150, 243, 0.4)' }}
+              />
+              <span className="currency-symbol">₪</span>
+            </div>
           </motion.div>
 
           <motion.div className="form-group" variants={itemVariants}>
             <label>מקור:</label>
-            <motion.select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              required
-              whileFocus={{ scale: 1.02, boxShadow: '0 0 8px rgba(33, 150, 243, 0.4)' }}
-            >
-              <option value="">בחר מקור</option>
-              <option value="salary">משכורת</option>
-              <option value="bonus">בונוס</option>
-              <option value="gift">מתנה</option>
-              <option value="other">אחר</option>
-            </motion.select>
+            <div className="select-wrapper">
+              <motion.select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                required
+                whileFocus={{ scale: 1.02, boxShadow: '0 0 8px rgba(33, 150, 243, 0.4)' }}
+              >
+                <option value="">בחר מקור</option>
+                <option value="salary">משכורת</option>
+                <option value="bonus">בונוס</option>
+                <option value="gift">מתנה</option>
+                <option value="other">אחר</option>
+              </motion.select>
+              <div className="category-icon">
+                <FaMoneyBillWave />
+              </div>
+            </div>
           </motion.div>
 
           <motion.div className="form-group" variants={itemVariants}>
@@ -211,7 +219,7 @@ const AddIncomePage: React.FC = () => {
             <motion.textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="הוסף תיאור להכנסה"
+              placeholder="הכנס תיאור"
               required
               whileFocus={{ scale: 1.02, boxShadow: '0 0 8px rgba(33, 150, 243, 0.4)' }}
             />

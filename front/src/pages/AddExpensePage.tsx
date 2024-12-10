@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { FaCar, FaGamepad, FaGift, FaHome, FaMoneyBillWave, FaShekelSign, FaShoppingCart, FaTshirt, FaUtensils } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import '../styles/AddExpensePage.css';
-import { FaHome, FaMoneyBillWave, FaShekelSign, FaShoppingCart, FaUtensils, FaCar, FaGamepad, FaGift, FaTshirt } from 'react-icons/fa';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const EXPENSE_CATEGORIES = [
   { value: 'food', label: 'מזון', icon: <FaUtensils /> },
@@ -147,7 +147,7 @@ const AddExpensePage: React.FC = () => {
             transition={{ delay: 0.4 }}
           >
             <label>סכום:</label>
-            <div className="amount-input-wrapper">
+            <div className="input-wrapper">
               <motion.input
                 type="number"
                 value={amount}
@@ -156,6 +156,7 @@ const AddExpensePage: React.FC = () => {
                 required
                 whileFocus={{ scale: 1.02 }}
               />
+              <span className="currency-symbol">₪</span>
             </div>
           </motion.div>
 
@@ -166,28 +167,24 @@ const AddExpensePage: React.FC = () => {
             transition={{ delay: 0.5 }}
           >
             <label>קטגוריה:</label>
-            <motion.select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              required
-              whileFocus={{ scale: 1.02 }}
-            >
-              <option value="">בחר קטגוריה</option>
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </motion.select>
-            {category && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="category-icon"
+            <div className="select-wrapper">
+              <motion.select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                whileFocus={{ scale: 1.02 }}
               >
-                {EXPENSE_CATEGORIES.find(cat => cat.value === category)?.icon}
-              </motion.div>
-            )}
+                <option value="">בחר קטגוריה</option>
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </motion.select>
+              <div className="category-icon">
+                {category && EXPENSE_CATEGORIES.find(cat => cat.value === category)?.icon}
+              </div>
+            </div>
           </motion.div>
 
           <motion.div 
