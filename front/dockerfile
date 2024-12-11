@@ -1,0 +1,28 @@
+# שלב הבנייה
+FROM node:18-alpine as build
+
+WORKDIR /app
+
+# העתקת קבצי החבילה
+COPY package*.json ./
+
+# התקנת תלויות
+RUN npm install
+
+# העתקת קוד המקור
+COPY . .
+
+# בניית האפליקציה
+RUN npm run build
+
+# שלב הריצה
+FROM nginx:alpine
+
+# העתקת הקבצים המוכנים משלב הבנייה
+COPY --from=build /app/build /usr/share/nginx/html
+
+# חשיפת פורט 80
+EXPOSE 80
+
+# הפעלת nginx
+CMD ["nginx", "-g", "daemon off;"]
