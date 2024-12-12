@@ -8,39 +8,28 @@ pipeline {
             }
         }
         
-        stage('Build Frontend') {
+        stage('Build and Test') {
             steps {
-                dir('front') {
-                    sh 'npm install'
-                    sh 'npm run build'
+                script {
+                    // Build all services using docker-compose
+                    sh 'docker compose build'
+                    
+                    // Start the services in detached mode
+                    sh 'docker compose up -d'
+                    
+                    // Show the logs
+                    sh 'docker compose logs'
                 }
-            }
-        }
-        
-        stage('Build Backend') {
-            steps {
-                dir('backend') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Build Docker Images') {
-            steps {
-                sh 'docker-compose build'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh 'docker-compose up -d'
             }
         }
     }
 
     post {
         always {
-            sh 'docker-compose logs'
+            script {
+                // Cleanup: Stop and remove containers
+                sh 'docker compose down'
+            }
         }
         success {
             echo 'Pipeline completed successfully!'
