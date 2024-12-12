@@ -32,5 +32,20 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    user: root
+
 volumes:
   mongodb_data:
+  jenkins_home:
