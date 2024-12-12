@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaMoneyBillWave, FaPiggyBank, FaHistory, FaPlusCircle, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaComment, FaFileAlt } from 'react-icons/fa';
+import { FiUser, FiLogOut, FiPlus } from 'react-icons/fi';
+import { FaMoneyBillWave, FaPiggyBank, FaHistory, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaComment, FaFileAlt } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/ChildDashboardPage.css';
 
@@ -20,6 +21,11 @@ interface ChildData {
     name: string;
     monthlyAllowance: number;
     remainingBudget: number;
+}
+
+interface ParentInfo {
+    name: string;
+    email: string;
 }
 
 const API_URL = 'http://localhost:5004';
@@ -44,6 +50,8 @@ const ChildDashboardPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [currentTip, setCurrentTip] = useState('');
     const [showRequestModal, setShowRequestModal] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [parentInfo, setParentInfo] = useState<ParentInfo | null>(null);
 
     useEffect(() => {
         setCurrentTip(savingTips[Math.floor(Math.random() * savingTips.length)]);
@@ -62,6 +70,25 @@ const ChildDashboardPage: React.FC = () => {
         fetchRequests(childId, token);
     }, [navigate]);
 
+    useEffect(() => {
+        const fetchParentInfo = async () => {
+            try {
+                const token = localStorage.getItem('childToken');
+                const parentId = localStorage.getItem('parentId');
+                if (!token || !parentId) return;
+
+                const response = await axios.get(`${API_URL}/api/auth/users/${parentId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setParentInfo(response.data);
+            } catch (error) {
+                console.error('Error fetching parent info:', error);
+            }
+        };
+
+        fetchParentInfo();
+    }, []);
+
     const fetchChildData = async (childId: string, token: string) => {
         try {
             const response = await axios.get(`${API_URL}/api/children/${childId}/data`, {
@@ -72,8 +99,7 @@ const ChildDashboardPage: React.FC = () => {
             console.error('Error fetching child data:', error);
             toast.error('שגיאה בטעינת הנתונים');
             if (axios.isAxiosError(error) && error.response?.status === 401) {
-                localStorage.removeItem('childToken');
-                localStorage.removeItem('childId');
+                localStorage.clear();
                 navigate('/login');
             }
         }
@@ -88,8 +114,7 @@ const ChildDashboardPage: React.FC = () => {
         } catch (error) {
             console.error('Error fetching requests:', error);
             if (axios.isAxiosError(error) && error.response?.status === 401) {
-                localStorage.removeItem('childToken');
-                localStorage.removeItem('childId');
+                localStorage.clear();
                 navigate('/login');
             }
         }
@@ -160,15 +185,55 @@ const ChildDashboardPage: React.FC = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/login');
+        toast.info('התנתקת בהצלחה');
+    };
+
+    const toggleUserMenu = () => {
+        setShowUserMenu(!showUserMenu);
+    };
+
     if (!childData) {
         return <div className="loading">טוען...</div>;
     }
 
     return (
         <div className="child-dashboard-container">
+            <header className="dashboard-header">
+                <div className="header-left">
+                    <button className="user-button" onClick={toggleUserMenu}>
+                        <FiUser />
+                    </button>
+                    {showUserMenu && (
+                        <div className="user-menu">
+                            <div className="user-info">
+                                <p><strong>שם:</strong> {childData.name}</p>
+                                {parentInfo && (
+                                    <p><strong>הורה:</strong> {parentInfo.name}</p>
+                                )}
+                                <p><strong>ילד</strong></p>
+                            </div>
+                            <button className="logout-button" onClick={handleLogout}>
+                                <FiLogOut />
+                                התנתק
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <h1>שלום {childData.name}!</h1>
+                <button 
+                    className="new-request-btn"
+                    onClick={() => setShowRequestModal(true)}
+                >
+                    <FiPlus />
+                    בקשה חדשה
+                </button>
+            </header>
+
             <div className="dashboard-hero">
                 <div className="hero-content">
-                    <h1>שלום {childData.name}! 👋</h1>
                     <div className="daily-tip">
                         <div className="tip-bubble">
                             <FaPiggyBank className="tip-icon" />
@@ -178,8 +243,8 @@ const ChildDashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="stats-container">
-                <div className="stat-card monthly-budget">
+            <div className="stats-grid">
+                <div className="stat-card">
                     <div className="stat-icon">
                         <FaMoneyBillWave />
                     </div>
@@ -197,7 +262,7 @@ const ChildDashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="stat-card remaining-budget">
+                <div className="stat-card">
                     <div className="stat-icon">
                         <FaPiggyBank />
                     </div>
@@ -217,12 +282,6 @@ const ChildDashboardPage: React.FC = () => {
                 <div className="section-title">
                     <FaHistory className="section-icon" />
                     <h2>הבקשות האחרונות שלי</h2>
-                    <button 
-                        className="new-request-btn"
-                        onClick={() => setShowRequestModal(true)}
-                    >
-                        <FaPlusCircle /> בקשה חדשה
-                    </button>
                 </div>
 
                 <div className="activity-cards">
@@ -298,8 +357,11 @@ const ChildDashboardPage: React.FC = () => {
                                     onChange={(e) => setRequestCategory(e.target.value)}
                                     required
                                 >
-                                    {categories.map(category => (
-                                        <option key={category} value={category}>{category}</option>
+                                    <option value="">בחר קטגוריה</option>
+                                    {categories.map((category) => (
+                                        <option key={category} value={category}>
+                                            {category}
+                                        </option>
                                     ))}
                                 </select>
                             </div>

@@ -6,13 +6,15 @@ require('dotenv').config();
 const app = express();
 const cors = require('cors');
 const server = http.createServer(app);
-const authRoutes = require('./routes/auth');
-const dashboardRoutes = require('./routes/dashboard');
 const connectDB = require('./db/index');
+
+const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboard');
 const incomeRoutes = require('./routes/income');
 const expenseRoutes = require('./routes/expenseRoutes');
 const childRoutes = require('./routes/childRoutes');
 const parentRoutes = require('./routes/parentRoutes');
+const requestRoutes = require('./routes/requestRoutes');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -39,6 +41,7 @@ app.use('/api/income', incomeRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/children', childRoutes);
 app.use('/api/parents', parentRoutes);
+app.use('/api/requests', requestRoutes);
 console.log("fffff",process.env.MONGO_URI);
 
 connectDB();

@@ -8,8 +8,9 @@ const { validationResult } = require('express-validator');
 const generateToken = (user) => {
     return jwt.sign(
         { 
-            id: user._id,
-            role: user.role
+            userId: user._id,
+            role: user.role,
+            username: user.username
         },
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '24h' }

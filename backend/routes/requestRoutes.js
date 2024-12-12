@@ -7,5 +7,6 @@ router.post('/', auth, requestController.createRequest);
 router.get('/', auth, requestController.getRequests);
 router.post('/:requestId/respond', auth, requestController.respondToRequest);
 router.get('/my-requests', auth, requestController.getMyRequests);
+router.get('/pending-count', auth, requestController.getPendingRequestsCount);
 
 module.exports = router; 

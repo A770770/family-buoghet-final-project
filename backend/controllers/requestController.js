@@ -4,12 +4,14 @@ const User = require('../models/User');
 const Alert = require('../models/Alert');
 const Budget = require('../models/Budget');
 const Expense = require('../models/Expense');
+const Income = require('../models/Income'); // Added Income model
+const Child = require('../models/Child'); // Added Child model
 const { refreshDashboardInternal } = require('./dashboardController');
 
 exports.createRequest = async (req, res) => {
     try {
         const { amount, description, category } = req.body;
-        const childId = req.user.userId;
+        const childId = req.user.id;
         
         // מציאת ההורה המקושר
         const child = await User.findById(childId);
@@ -49,7 +51,7 @@ exports.createRequest = async (req, res) => {
 
 exports.getRequests = async (req, res) => {
     try {
-        const { userId, role } = req.user;
+        const { id, role } = req.user;
         const { status, startDate, endDate } = req.query;
 
         let query = {};
@@ -57,9 +59,9 @@ exports.getRequests = async (req, res) => {
         // הורה רואה את כל הבקשות של הילדים שלו
         // ילד רואה רק את הבקשות שלו
         if (role === 'parent') {
-            query.parentId = userId;
+            query.parentId = id;
         } else {
-            query.childId = userId;
+            query.childId = id;
         }
 
         if (status) {
@@ -85,87 +87,159 @@ exports.getRequests = async (req, res) => {
     }
 };
 
-exports.respondToRequest = async (req, res) => {
+exports.getMyRequests = async (req, res) => {
     try {
-        const { requestId } = req.params;
-        const { status, transferMethod, transferDetails } = req.body;
-        const parentId = req.user.userId;
+        const userId = req.user.id;
+        const requests = await Request.find({
+            $or: [
+                { childId: userId },
+                { parentId: userId }
+            ]
+        }).sort({ requestDate: -1 });
+        
+        res.json(requests);
+    } catch (error) {
+        console.error('Error getting my requests:', error);
+        res.status(500).json({ error: 'שגיאה בקבלת הבקשות' });
+    }
+};
 
+exports.respondToRequest = async (req, res) => {
+    const { requestId } = req.params;
+    const { action, message } = req.body;
+    const parentId = req.user.id;
+
+    try {
+        // מציאת הבקשה
         const request = await Request.findById(requestId).populate('childId');
         if (!request) {
-            return res.status(404).json({ error: 'הבקשה לא נמצאה' });
+            return res.status(404).json({ message: 'הבקשה לא נמצאה' });
         }
 
-        if (request.parentId.toString() !== parentId) {
-            return res.status(403).json({ error: 'אין הרשאה לטפל בבקשה זו' });
+        const child = request.childId;
+        if (!child) {
+            return res.status(404).json({ message: 'הילד לא נמצא' });
         }
 
-        if (request.status !== 'pending') {
-            return res.status(400).json({ error: 'לא ניתן לשנות בקשה שכבר טופלה' });
+        // בדיקה שההורה הוא אכן ההורה של הילד
+        if (child.parent.toString() !== parentId) {
+            return res.status(403).json({ message: 'אין לך הרשאה לטפל בבקשה זו' });
         }
 
-        if (status === 'approved') {
-            const budget = await Budget.findOne({ userId: parentId });
-            if (!budget) {
-                return res.status(400).json({ error: 'לא נמצא תקציב' });
+        // עדכון סטטוס הבקשה
+        request.status = action;
+        request.responseMessage = message;
+        request.respondedAt = new Date();
+        await request.save();
+
+        if (action === 'approve') {
+            // עדכון תקציב הילד
+            child.remainingBudget += request.amount;
+            await child.save();
+
+            // מציאת תקציב ההורה
+            const parentBudget = await Budget.findOne({ userId: parentId });
+            if (!parentBudget) {
+                return res.status(404).json({ message: 'לא נמצא תקציב להורה' });
             }
 
-            if (budget.amount < request.amount) {
-                return res.status(400).json({ error: 'אין מספיק כסף בתקציב' });
-            }
+            // עדכון תקציב ההורה
+            parentBudget.amount -= request.amount;
+            await parentBudget.save();
 
-            budget.amount -= request.amount;
-            await budget.save();
-
-            // יצירת הוצאה חדשה
+            // יצירת הוצאה להורה
             await Expense.create({
                 userId: parentId,
                 amount: request.amount,
                 category: 'העברה לילד',
-                description: `העברה ל${request.childId.username}: ${request.description}`,
+                description: `העברה ל${child.username}: ${request.description}`,
                 date: new Date()
             });
 
-            request.transferMethod = transferMethod;
-            request.transferDetails = transferDetails;
+            // רענון הדשבורד של שני הצדדים
+            await refreshDashboardInternal(parentId);
+            await refreshDashboardInternal(request.childId._id);
         }
 
-        request.status = status;
-        request.responseDate = new Date();
-        await request.save();
-
-        // יצירת התראה לילד
-        await Alert.create({
-            userId: request.childId._id,
-            type: 'request_response',
-            message: `הבקשה שלך ${status === 'approved' ? 'אושרה' : 'נדחתה'}`,
-            relatedData: {
-                requestId: request._id,
-                status,
-                transferMethod,
-                transferDetails
-            }
-        });
-
-        // רענון הדשבורד של שני הצדדים
-        await refreshDashboardInternal(parentId);
-        await refreshDashboardInternal(request.childId._id);
-
-        res.json({
-            message: 'התגובה נשמרה בהצלחה',
+        res.json({ 
+            message: action === 'approve' ? 'הבקשה אושרה' : 'הבקשה נדחתה',
+            child: await Child.findById(child._id),
             request
         });
-
     } catch (error) {
-        console.error('שגיאה בטיפול בבקשה:', error);
-        res.status(500).json({ error: 'שגיאה בטיפול בבקשה' });
+        console.error('Error in respondToRequest:', error);
+        res.status(500).json({ 
+            message: 'שגיאה בטיפול בבקשה',
+            error: error.message 
+        });
+    }
+};
+
+exports.getPendingRequestsCount = async (req, res) => {
+    try {
+        const parentId = req.user.id;
+        console.log('Getting pending requests for parent:', {
+            parentId,
+            userInfo: req.user
+        });
+
+        // בדיקת כל הילדים במערכת
+        const allChildren = await Child.find({}).select('_id name parent');
+        console.log('All children:', allChildren.map(child => ({
+            id: child._id,
+            name: child.name,
+            parent: child.parent
+        })));
+
+        // בדיקת כל הבקשות הממתינות במערכת
+        const allRequests = await Request.find({ status: 'pending' })
+            .populate('childId', 'name parent');
+        
+        console.log('All pending requests:', allRequests.map(req => ({
+            id: req._id,
+            childName: req.childId?.name,
+            childId: req.childId?._id,
+            childParent: req.childId?.parent,
+            amount: req.amount,
+            status: req.status
+        })));
+
+        // מצא את כל הילדים של ההורה הזה
+        const children = await Child.find({
+            parent: parentId
+        }).select('_id');
+
+        const childrenIds = children.map(child => child._id);
+
+        console.log('Found children:', {
+            parentId,
+            childrenCount: children.length,
+            childrenIds: childrenIds.map(id => id.toString())
+        });
+        
+        // מצא את כל הבקשות הממתינות מהילדים של ההורה
+        const count = await Request.countDocuments({
+            childId: { $in: childrenIds },
+            status: 'pending'
+        });
+
+        console.log('Pending requests:', { 
+            parentId,
+            childrenIds: childrenIds.map(id => id.toString()),
+            count
+        });
+        
+        res.json({ count });
+    } catch (error) {
+        console.error('Error getting pending count:', error);
+        res.status(500).json({ error: 'שגיאה בקבלת מספר הבקשות הממתינות' });
     }
 };
 
 exports.deleteRequest = async (req, res) => {
     try {
         const { requestId } = req.params;
-        const { userId, role } = req.user;
+        const { id, role } = req.user;
 
         const request = await Request.findById(requestId);
         if (!request) {
@@ -173,7 +247,7 @@ exports.deleteRequest = async (req, res) => {
         }
 
         // רק הילד שיצר את הבקשה יכול למחוק אותה, וזה רק אם היא עדיין ממתינה
-        if (role === 'child' && (request.childId.toString() !== userId || request.status !== 'pending')) {
+        if (role === 'child' && (request.childId.toString() !== id || request.status !== 'pending')) {
             return res.status(403).json({ error: 'אין הרשאה למחוק בקשה זו' });
         }
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope, FaTrash, FaMinus, FaBell } from 'react-icons/fa';
+import { FaPlus, FaChild, FaKey, FaCopy, FaWhatsapp, FaSms, FaEnvelope, FaTrash, FaMinus, FaBell, FaHome } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/ChildrenManagementPage.css';
+import { useNavigate } from 'react-router-dom';
 
 interface Request {
     id: string;
@@ -32,6 +33,7 @@ interface Child {
 const API_URL = 'http://localhost:5004';
 
 const ChildrenManagementPage: React.FC = () => {
+    const navigate = useNavigate();
     const [children, setChildren] = useState<Child[]>([]);
     const [selectedChild, setSelectedChild] = useState<string | null>(null);
     const [showAddChildModal, setShowAddChildModal] = useState(false);
@@ -211,6 +213,7 @@ const ChildrenManagementPage: React.FC = () => {
     const handleRequestAction = async (requestId: string, action: 'approve' | 'reject', message?: string) => {
         try {
             const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
             const response = await axios.post(
                 `${API_URL}/api/parents/requests/${requestId}/${action}`, 
                 { message },
@@ -218,7 +221,28 @@ const ChildrenManagementPage: React.FC = () => {
             );
             
             // עדכון הילד הספציפי עם הנתונים החדשים
-            const { child: updatedChild } = response.data;
+            const { child: updatedChild, request } = response.data;
+
+            // עדכון נתוני הדשבורד של ההורה
+            try {
+                const dashboardResponse = await axios.get(
+                    `${API_URL}/api/dashboard/getDashboardData/${userId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                // שליחת אירוע מותאם לעדכון הדשבורד
+                window.dispatchEvent(new CustomEvent('dashboardUpdate', { 
+                    detail: dashboardResponse.data 
+                }));
+            } catch (error) {
+                console.error('שגיאה בעדכון נתוני הדשבורד:', error);
+            }
+
+            // אם הבקשה אושרה, פתח את קישור התשלום של PayPal
+            if (action === 'approve' && request?.amount) {
+                const paypalLink = `https://www.paypal.com/paypalme/my/settings?flow=cmV0dXJuVXJsPWh0dHBzJTNBJTJGJTJGd3d3LnBheXBhbC5jb20lMkZteWFjY291bnQlMkZ0cmFuc2ZlciUzRmNtZCUzRHhmZXI/amount=${request.amount}`;
+                window.open(paypalLink, '_blank');
+            }
+            
             setChildren(prevChildren => 
                 prevChildren.map(child => 
                     child._id === updatedChild._id 
@@ -240,7 +264,28 @@ const ChildrenManagementPage: React.FC = () => {
 
     return (
         <div className="children-management-page">
-            <h1>ניהול ילדים</h1>
+            <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+            >
+                <FaHome size={24} />
+            </button>
+            <h1>ניהול משתמשים</h1>
             <button className="add-child-button" onClick={() => setShowAddChildModal(true)}>
                 <FaPlus /> הוסף ילד
             </button>

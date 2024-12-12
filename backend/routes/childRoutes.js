@@ -12,7 +12,7 @@ const childAuth = require('../middleware/childAuth');
 // הוספת ילד חדש
 router.post('/', auth, async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, monthlyAllowance } = req.body;
         if (!name) {
             return res.status(400).json({ message: 'נא להזין שם' });
         }
@@ -24,8 +24,8 @@ router.post('/', auth, async (req, res) => {
             name,
             password,
             parent: req.user.id,
-            monthlyAllowance: 0,
-            remainingBudget: 0
+            monthlyAllowance: Number(monthlyAllowance) || 0,
+            remainingBudget: Number(monthlyAllowance) || 0
         });
 
         await child.save();
@@ -151,8 +151,10 @@ router.post('/:childId/add-budget', auth, async (req, res) => {
         // עדכון התקציב
         if (action === 'add') {
             child.remainingBudget += amount;
+            child.monthlyAllowance += amount; // עדכון התקציב החודשי
         } else if (action === 'reduce') {
             child.remainingBudget -= amount;
+            child.monthlyAllowance -= amount; // עדכון התקציב החודשי
         } else {
             return res.status(400).json({ message: 'פעולה לא תקינה' });
         }
@@ -161,7 +163,12 @@ router.post('/:childId/add-budget', auth, async (req, res) => {
 
         res.json({ 
             message: `התקציב ${action === 'add' ? 'הוגדל' : 'הוקטן'} בהצלחה`,
-            child 
+            child: {
+                _id: child._id,
+                name: child.name,
+                monthlyAllowance: child.monthlyAllowance,
+                remainingBudget: child.remainingBudget
+            }
         });
     } catch (error) {
         console.error('Error updating budget:', error);
@@ -384,15 +391,24 @@ router.put('/:childId/budget', auth, async (req, res) => {
         }
 
         // חישוב ההפרש בין התקציב החדש לישן
-        const budgetDiff = monthlyBudget - child.monthlyAllowance;
+        const budgetDiff = Number(monthlyBudget) - child.monthlyAllowance;
         
-        child.monthlyAllowance = monthlyBudget;
+        child.monthlyAllowance = Number(monthlyBudget);
         child.remainingBudget += budgetDiff; // עדכון התקציב הנותר בהתאם לשינוי
         
         await child.save();
 
-        res.json(child);
+        res.json({
+            message: 'התקציב החודשי עודכן בהצלחה',
+            child: {
+                _id: child._id,
+                name: child.name,
+                monthlyAllowance: child.monthlyAllowance,
+                remainingBudget: child.remainingBudget
+            }
+        });
     } catch (error) {
+        console.error('Error updating monthly budget:', error);
         res.status(500).json({ message: error.message });
     }
 });
