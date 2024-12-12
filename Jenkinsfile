@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker:dind'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -10,26 +15,17 @@ pipeline {
         
         stage('Build and Test') {
             steps {
-                script {
-                    // Build all services using docker-compose
-                    sh 'docker compose build'
-                    
-                    // Start the services in detached mode
-                    sh 'docker compose up -d'
-                    
-                    // Show the logs
-                    sh 'docker compose logs'
-                }
+                sh 'docker compose version'
+                sh 'docker compose build'
+                sh 'docker compose up -d'
+                sh 'docker compose logs'
             }
         }
     }
 
     post {
         always {
-            script {
-                // Cleanup: Stop and remove containers
-                sh 'docker compose down'
-            }
+            sh 'docker compose down || true'
         }
         success {
             echo 'Pipeline completed successfully!'
