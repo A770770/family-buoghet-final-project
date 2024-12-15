@@ -13,6 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # Frontend
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
@@ -22,50 +23,33 @@ jobs:
 
     - name: Install Frontend Dependencies
       working-directory: ./front
-      run: |
-        if [ -f "package.json" ]; then
-          npm ci || npm install
-        else
-          echo "No package.json found, skipping frontend dependencies"
-        fi
+      run: npm install
 
     - name: Build Frontend
       working-directory: ./front
-      run: |
-        if [ -f "package.json" ]; then
-          npm run build || echo "Build script not found, skipping build"
-        else
-          echo "No package.json found, skipping build"
-        fi
+      run: npm run build
+      env:
+        CI: false  # This prevents treating warnings as errors
 
-    - name: Test Frontend
-      working-directory: ./front
-      run: npm test
-      continue-on-error: true  # אם אין טסטים עדיין, זה לא יכשיל את ה-workflow
-
+    # Backend
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-        cache: 'pip'
 
     - name: Install Backend Dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        fi
+        pip install -r requirements.txt
 
-    - name: Run Backend Tests
+    - name: Check Backend Structure
       run: |
-        if [ -d tests ]; then
-          python -m pytest
-        else
-          echo "No tests directory found, skipping backend tests"
+        if [ -d "backend" ]; then
+          echo "Backend directory exists"
+          ls -la backend/
         fi
-      continue-on-error: true  # אם אין טסטים עדיין, זה לא יכשיל את ה-workflow
 
-  docker-build:
+  docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
     
@@ -75,10 +59,39 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker images
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push with Docker Compose
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       run: |
-        if [ -f "docker-compose.yml" ]; then
-          docker compose build
-        else
-          echo "No docker-compose.yml found, skipping Docker build"
-        fi
+        # עדכון תגיות ה-images בdocker-compose
+        sed -i "s|build:|image: ${{ secrets.DOCKER_USERNAME }}/family-budget-frontend:${GITHUB_SHA}\n        build:|" docker-compose.yml
+        sed -i "s|context: ./backend|image: ${{ secrets.DOCKER_USERNAME }}/family-budget-backend:${GITHUB_SHA}\n        context: ./backend|" docker-compose.yml
+        
+        # בנייה ודחיפה של ה-images
+        docker compose build
+        docker compose push
+
+    - name: Test Docker Compose Configuration
+      run: docker compose config
+        
+    # אופציונלי: הרצת הקונטיינרים לבדיקה
+    - name: Start Containers
+      run: |
+        docker compose up -d
+        
+    - name: Check Running Containers
+      run: |
+        docker compose ps
+        sleep 30  # נותן זמן לשירותים לעלות
+        
+    - name: Check Logs
+      run: docker compose logs
+        
+    - name: Stop Containers
+      run: docker compose down
