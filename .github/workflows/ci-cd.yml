@@ -62,12 +62,12 @@ jobs:
 
     - name: Check Docker Files
       run: |
-        if [ ! -f "./front/Dockerfile" ]; then
-          echo "Error: ./front/Dockerfile not found"
+        if [ ! -f "./front/Dockerfile" ] && [ ! -f "./front/dockerfile" ]; then
+          echo "Error: Dockerfile not found in ./front directory"
           exit 1
         fi
-        if [ ! -f "./backend/Dockerfile" ]; then
-          echo "Error: ./backend/Dockerfile not found"
+        if [ ! -f "./backend/Dockerfile" ] && [ ! -f "./backend/dockerfile" ]; then
+          echo "Error: Dockerfile not found in ./backend directory"
           exit 1
         fi
         if [ ! -f "./docker-compose.yml" ]; then

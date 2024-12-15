@@ -45,6 +45,9 @@ services:
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     user: root
+    group_add:
+      - "0"
+      - "998"  # docker group in Jenkins container
 
 volumes:
   mongodb_data:
