@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -55,23 +55,23 @@ jobs:
 
   docker-build-and-push:
     needs: build-and-test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     
     steps:
     - uses: actions/checkout@v3
 
     - name: Check Docker Files
       run: |
-        if [ ! -f "front/Dockerfile" ]; then
-          echo "Error: front/Dockerfile not found"
+        if [ ! -f "./front/Dockerfile" ]; then
+          echo "Error: ./front/Dockerfile not found"
           exit 1
         fi
-        if [ ! -f "backend/Dockerfile" ]; then
-          echo "Error: backend/Dockerfile not found"
+        if [ ! -f "./backend/Dockerfile" ]; then
+          echo "Error: ./backend/Dockerfile not found"
           exit 1
         fi
-        if [ ! -f "docker-compose.yml" ]; then
-          echo "Error: docker-compose.yml not found"
+        if [ ! -f "./docker-compose.yml" ]; then
+          echo "Error: ./docker-compose.yml not found"
           exit 1
         fi
 
