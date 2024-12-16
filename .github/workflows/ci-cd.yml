@@ -1,186 +1,4 @@
-# name: CI/CD Pipeline
-
-# on:
-#   push:
-#     branches: [ "feature/fixed-expenses-dashboard" ]
-#   pull_request:
-#     branches: [ "feature/fixed-expenses-dashboard" ]
-
-# jobs:
-#   build-and-test:
-#     runs-on: ubuntu-22.04
-
-#     steps:
-#     - uses: actions/checkout@v3
-
-#     # Frontend
-#     - name: Set up Node.js
-#       uses: actions/setup-node@v3
-#       with:
-#         node-version: '18'
-#         cache: 'npm'
-#         cache-dependency-path: 'front/package-lock.json'
-
-#     - name: Install Frontend Dependencies
-#       working-directory: ./front
-#       run: npm install
-
-#     - name: Build Frontend
-#       working-directory: ./front
-#       run: npm run build
-#       env:
-#         CI: false  # This prevents treating warnings as errors
-
-#     # Backend
-#     - name: Set up Python
-#       uses: actions/setup-python@v4
-#       with:
-#         python-version: '3.10'
-
-#     - name: Install Backend Dependencies
-#       run: |
-#         python -m pip install --upgrade pip
-#         if [ -f "backend/requirements.txt" ]; then
-#           pip install -r backend/requirements.txt
-#         else
-#           echo "Warning: backend/requirements.txt not found"
-#         fi
-
-#     - name: Check Backend Structure
-#       run: |
-#         if [ -d "backend" ]; then
-#           echo "Backend directory exists"
-#           ls -la backend/
-#         fi
-
-#   docker-build-and-push:
-#     needs: build-and-test
-#     runs-on: ubuntu-22.04
-    
-#     steps:
-#     - uses: actions/checkout@v3
-
-#     - name: Check Docker Files
-#       run: |
-#         if [ ! -f "./front/Dockerfile" ] && [ ! -f "./front/dockerfile" ]; then
-#           echo "Error: Dockerfile not found in ./front directory"
-#           exit 1
-#         fi
-#         if [ ! -f "./backend/Dockerfile" ] && [ ! -f "./backend/dockerfile" ]; then
-#           echo "Error: Dockerfile not found in ./backend directory"
-#           exit 1
-#         fi
-#         if [ ! -f "./docker-compose.yml" ]; then
-#           echo "Error: ./docker-compose.yml not found"
-#           exit 1
-#         fi
-
-#     - name: Check Docker Credentials
-#       run: |
-#         if [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
-#           echo "Error: DOCKER_USERNAME secret is not set"
-#           exit 1
-#         fi
-#         if [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
-#           echo "Error: DOCKER_PASSWORD secret is not set"
-#           exit 1
-#         fi
-
-#     - name: Set up Docker Buildx
-#       uses: docker/setup-buildx-action@v3
-
-#     - name: Login to Docker Hub
-#       uses: docker/login-action@v3
-#       with:
-#         username: 7700nna
-#         password: ${{ secrets.DOCKER_TOKEN }}
-
-#     - name: Build and Push Frontend
-#       uses: docker/build-push-action@v5
-#       id: docker_build_frontend
-#       with:
-#         context: ./front
-#         push: true
-#         tags: 7700nna/family-budget-frontend:${{ github.sha }}
-#         cache-from: type=registry,ref=7700nna/family-budget-frontend:latest
-#         cache-to: type=inline
-
-#     - name: Retry Frontend Build on Failure
-#       if: steps.docker_build_frontend.outcome == 'failure'
-#       uses: docker/build-push-action@v5
-#       with:
-#         context: ./front
-#         push: true
-#         tags: 7700nna/family-budget-frontend:${{ github.sha }}
-#         cache-from: type=registry,ref=7700nna/family-budget-frontend:latest
-#         cache-to: type=inline
-
-#     - name: Build and Push Backend
-#       uses: docker/build-push-action@v5
-#       id: docker_build_backend
-#       with:
-#         context: ./backend
-#         push: true
-#         tags: 7700nna/family-budget-backend:${{ github.sha }}
-#         cache-from: type=registry,ref=7700nna/family-budget-backend:latest
-#         cache-to: type=inline
-
-#     - name: Retry Backend Build on Failure
-#       if: steps.docker_build_backend.outcome == 'failure'
-#       uses: docker/build-push-action@v5
-#       with:
-#         context: ./backend
-#         push: true
-#         tags: 7700nna/family-budget-backend:${{ github.sha }}
-#         cache-from: type=registry,ref=7700nna/family-budget-backend:latest
-#         cache-to: type=inline
-
-#     - name: Test Docker Compose Configuration
-#       run: |
-#         echo "Validating docker-compose.yml configuration..."
-#         docker compose config
-        
-#     # Optional: Test the containers
-#     - name: Start Containers
-#       run: |
-#         echo "Starting containers with docker-compose..."
-#         docker compose up -d
-#         echo "Waiting for containers to be healthy..."
-#         # Wait for containers to be healthy (max 2 minutes)
-#         timeout=120
-#         while [ $timeout -gt 0 ]; do
-#           if docker compose ps --format json | grep -q '"State":"running"'; then
-#             echo "All containers are running"
-#             exit 0
-#           fi
-#           sleep 5
-#           timeout=$((timeout-5))
-#           echo "Waiting for containers to be healthy... ${timeout}s remaining"
-#         done
-#         echo "Timeout waiting for containers"
-#         docker compose logs
-#         exit 1
-        
-#     - name: Check Running Containers
-#       run: |
-#         docker compose ps
-#         # Check container health
-#         if ! docker compose ps --format json | grep -q '"State":"running"'; then
-#           echo "Error: Not all containers are running"
-#           docker compose logs
-#           exit 1
-#         fi
-#         sleep 30
-        
-#     - name: Check Logs
-#       run: docker compose logs
-        
-#     - name: Stop Containers
-#       run: docker compose down
-
-
 name: CI/CD Pipeline
-
 on:
   push:
     branches: [ "feature/fixed-expenses-dashboard" ]
@@ -259,8 +77,8 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
-        username: 7700nna
-        password: ${{ secrets.DOCKER_TOKEN }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -271,9 +89,7 @@ jobs:
       with:
         context: ./front
         push: true
-        tags: 7700nna/family-budget-frontend:${{ github.sha }}
-        cache-from: type=registry,ref=7700nna/family-budget-frontend:latest
-        cache-to: type=inline
+        tags: ${{ secrets.DOCKER_USERNAME }}/family-budget-frontend:${{ github.sha }}
 
     - name: Retry Frontend Build on Failure
       if: steps.docker_build_frontend.outcome == 'failure'
@@ -281,9 +97,7 @@ jobs:
       with:
         context: ./front
         push: true
-        tags: 7700nna/family-budget-frontend:${{ github.sha }}
-        cache-from: type=registry,ref=7700nna/family-budget-frontend:latest
-        cache-to: type=inline
+        tags: ${{ secrets.DOCKER_USERNAME }}/family-budget-frontend:${{ github.sha }}
 
     - name: Build and Push Backend
       uses: docker/build-push-action@v5
@@ -291,9 +105,7 @@ jobs:
       with:
         context: ./backend
         push: true
-        tags: 7700nna/family-budget-backend:${{ github.sha }}
-        cache-from: type=registry,ref=7700nna/family-budget-backend:latest
-        cache-to: type=inline
+        tags: ${{ secrets.DOCKER_USERNAME }}/family-budget-backend:${{ github.sha }}
 
     - name: Retry Backend Build on Failure
       if: steps.docker_build_backend.outcome == 'failure'
@@ -301,9 +113,7 @@ jobs:
       with:
         context: ./backend
         push: true
-        tags: 7700nna/family-budget-backend:${{ github.sha }}
-        cache-from: type=registry,ref=7700nna/family-budget-backend:latest
-        cache-to: type=inline
+        tags: ${{ secrets.DOCKER_USERNAME }}/family-budget-backend:${{ github.sha }}
 
     - name: Test Docker Compose Configuration
       run: |
