@@ -1,0 +1,11 @@
+{
+  "name": "family-budget",
+  "version": "1.0.0",
+  "description": "Family Budget Application",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd front && npm start",
+    "start:backend": "cd backend && npm start",
+    "dev": "cd front && npm start & cd backend && npm run dev"
+  }
+}

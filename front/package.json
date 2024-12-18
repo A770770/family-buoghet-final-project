@@ -7,7 +7,6 @@
     "@emotion/styled": "^11.13.5",
     "@mui/material": "^6.1.8",
     "@szhsin/react-menu": "^4.2.3",
-    "@testing-library/user-event": "^13.5.0",
     "@types/node": "^16.18.117",
     "@types/react": "^18.2.0",
     "@types/react-datepicker": "^6.2.0",
@@ -47,8 +46,13 @@
     ]
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^14.3.1",
-    "@types/jest": "^29.5.14"
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+    }
   }
 }
